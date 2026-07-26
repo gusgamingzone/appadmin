@@ -15,7 +15,7 @@
         button:hover { background: #00c853; }
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; }
-        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-top: 20px; max-height: 120px; overflow-y: auto; border: 1px solid #333; }
+        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-top: 20px; max-height: 140px; overflow-y: auto; border: 1px solid #333; }
     </style>
 
     <!-- Importar Firebase SDK desde CDN -->
@@ -88,121 +88,65 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",[cite: 1]
-            authDomain: "zona-de-comando.firebaseapp.com",
-            databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",[cite: 1]
-            projectId: "zona-de-comando",[cite: 1]
-            storageBucket: "zona-de-comando.firebasestorage.app",[cite: 1]
-            messagingSenderId: "395464987840",[cite: 1]
-            appId: "1:395464987840:android:e80b1c15a39218eec70925"[cite: 1]
-        };
+        try {
+            log("Cargando configuración de Firebase...");
+            const firebaseConfig = {
+                apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",
+                authDomain: "zona-de-comando.firebaseapp.com",
+                databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",
+                projectId: "zona-de-comando",
+                storageBucket: "zona-de-comando.firebasestorage.app",
+                messagingSenderId: "395464987840",
+                appId: "1:395464987840:android:e80b1c15a39218eec70925"
+            };
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-        log("Firebase inicializado correctamente.");
+            firebase.initializeApp(firebaseConfig);
+            log("Firebase inicializado con éxito.");
 
-        const loginSection = document.getElementById('loginSection');
-        const adminSection = document.getElementById('adminSection');
-        const btnLogin = document.getElementById('btnLogin');
-        const txtAdminInfo = document.getElementById('txtAdminInfo');
-        const mensaje = document.getElementById('mensaje');
+            const auth = firebase.auth();
+            const db = firebase.database();
 
-        btnLogin.addEventListener('click', () => {
-            log("Botón presionado. Solicitando redirección a Google...");
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider).catch(error => {
-                log("ERROR EN REDIRECCIÓN: " + error.message);
-            });
-        });
+            const loginSection = document.getElementById('loginSection');
+            const adminSection = document.getElementById('adminSection');
+            const btnLogin = document.getElementById('btnLogin');
+            const txtAdminInfo = document.getElementById('txtAdminInfo');
+            const mensaje = document.getElementById('mensaje');
 
-        // Comprobar resultado de redirección
-        auth.getRedirectResult().then((result) => {
-            if (result.user) {
-                log("Redirección exitosa. Usuario: " + result.user.email);
-            } else {
-                log("No hay resultado de redirección pendiente.");
-            }
-        }).catch((error) => {
-            log("ERROR GET REDIRECT: " + error.code + " - " + error.message);
-        });
-
-        // Monitorear cambios de usuario
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                log("AuthState: Usuario detectado -> " + user.email + " (UID: " + user.uid + ")");
-                log("Verificando permisos en el nodo Admins...");
-                
-                db.ref("Admins/" + user.uid).once("value").then(snapshot => {
-                    if (snapshot.exists() && snapshot.val() === true) {
-                        log("¡Permisos de Administrador confirmados!");
-                        loginSection.classList.add('hidden');
-                        adminSection.classList.remove('hidden');
-                        txtAdminInfo.innerText = "Conectado como: " + user.email;
-                    } else {
-                        log("ACCESO DENEGADO: El UID " + user.uid + " no está en el nodo Admins.");
-                        alert("Acceso denegado: Tu cuenta no está registrada como administrador en Firebase.");
-                        auth.signOut();
-                    }
-                }).catch(err => {
-                    log("ERROR DB: " + err.message);
+            btnLogin.addEventListener('click', () => {
+                log("¡Botón de Google presionado!");
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithRedirect(provider).catch(error => {
+                    log("ERROR AL REDIRIGIR: " + error.message);
                 });
-            } else {
-                log("AuthState: Ningún usuario ha iniciado sesión.");
-                loginSection.classList.remove('hidden');
-                adminSection.classList.add('hidden');
-            }
-        });
-
-        // Guardar Armas
-        document.getElementById('btnGuardarArmas').addEventListener('click', () => {
-            const cat = document.getElementById('selCategoria').value;
-            const fNombre = document.getElementById('fusilNombre').value;
-            const fCodigo = document.getElementById('fusilCodigo').value;
-            const fUrl = document.getElementById('fusilUrl').value;
-
-            if(!fNombre || !fCodigo || !fUrl) {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Por favor completa todos los campos del fusil.";
-                return;
-            }
-
-            db.ref("MetaArmas/" + cat).update({
-                fusil_nombre: fNombre,
-                fusil_codigo: fCodigo,
-                fusil_url: fUrl
-            }).then(() => {
-                mensaje.style.color = "#00E676";
-                mensaje.innerText = "¡Meta de armas actualizada con éxito!";
-            }).catch(error => {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error: " + error.message;
             });
-        });
 
-        // Guardar Videos
-        document.getElementById('btnGuardarVideos').addEventListener('click', () => {
-            const jTitulo = document.getElementById('jugadaTitulo').value;
-            const jUrl = document.getElementById('jugadaUrl').value;
-
-            if(!jTitulo || !jUrl) {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Por favor completa los campos de la jugada.";
-                return;
-            }
-
-            db.ref("VideosComunidad/jugada_semana").set({
-                titulo: jTitulo,
-                url: jUrl
-            }).then(() => {
-                mensaje.style.color = "#00E676";
-                mensaje.innerText = "¡Jugada de la semana actualizada con éxito!";
-            }).catch(error => {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error: " + error.message;
+            auth.getRedirectResult().catch(error => {
+                log("ERROR GET REDIRECT: " + error.message);
             });
-        });
+
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    log("Usuario detectado: " + user.email);
+                    db.ref("Admins/" + user.uid).once("value").then(snapshot => {
+                        if (snapshot.exists() && snapshot.val() === true) {
+                            log("Acceso concedido como Administrador.");
+                            loginSection.classList.add('hidden');
+                            adminSection.classList.remove('hidden');
+                            txtAdminInfo.innerText = "Conectado como: " + user.email;
+                        } else {
+                            log("ACCESO DENEGADO. UID: " + user.uid);
+                            alert("Acceso denegado: Tu cuenta no está registrada como administrador.");
+                            auth.signOut();
+                        }
+                    });
+                } else {
+                    log("Esperando inicio de sesión...");
+                }
+            });
+
+        } catch (err) {
+            log("EXCEPCIÓN CRÍTICA: " + err.message);
+        }
     </script>
 </body>
 </html>
