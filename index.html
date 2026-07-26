@@ -101,7 +101,7 @@
         const txtAdminInfo = document.getElementById('txtAdminInfo');
         const mensaje = document.getElementById('mensaje');
 
-        // Botón de Login usando Redirección (Evita bloqueadores de pop-ups)
+        // Botón de Login usando Redirección
         btnLogin.addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithRedirect(provider).catch(error => {
@@ -109,12 +109,12 @@
             });
         });
 
-        // Manejar el resultado al regresar de la redirección de Google
+        // Manejar el resultado de la redirección
         auth.getRedirectResult().catch(error => {
             alert("Error en redirección: " + error.message);
         });
 
-        // Monitorear estado de autenticación
+        // Monitorear estado de autenticación con depuración de UID
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
@@ -123,11 +123,14 @@
                         adminSection.classList.remove('hidden');
                         txtAdminInfo.innerText = "Conectado como: " + user.email;
                     } else {
-                        alert("Acceso denegado: Esta cuenta no tiene permisos de administrador.");
+                        alert("Acceso denegado.\nTu UID actual es:\n" + user.uid + "\n\nAsegúrate de copiar este código exacto y ponerlo en el nodo Admins de tu Realtime Database.");
                         auth.signOut();
                     }
+                }).catch(err => {
+                    alert("Error consultando base de datos: " + err.message);
                 });
             } else {
+                loginSection.classList.add('hidden'); // Ocultar mientras carga
                 loginSection.classList.remove('hidden');
                 adminSection.classList.add('hidden');
             }
