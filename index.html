@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - GusGamingZone</title>
-    <!-- Estilos modernos estilo gamer oscuro -->
+    <title>Panel de Administración - Depuración</title>
     <style>
         body { background-color: #0d0f12; color: #ffffff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #1a1d21; padding: 20px; border-radius: 12px; border: 2px solid #00E676; }
@@ -16,7 +15,7 @@
         button:hover { background: #00c853; }
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; }
-        .uid-box { background: #0d0f12; padding: 10px; border: 1px dashed #00E676; border-radius: 6px; word-break: break-all; font-family: monospace; color: #00E676; margin: 10px 0; }
+        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-top: 20px; max-height: 120px; overflow-y: auto; border: 1px solid #333; }
     </style>
 
     <!-- Importar Firebase SDK desde CDN -->
@@ -32,23 +31,15 @@
 
         <!-- SECCIÓN DE LOGIN -->
         <div id="loginSection" style="text-align: center;">
-            <p>Inicia sesión con tu cuenta de Google para obtener tu UID y administrar el clan.</p>
+            <p>Inicia sesión con tu cuenta de Administrador para continuar.</p>
             <button id="btnLogin">Iniciar sesión con Google</button>
         </div>
 
-        <!-- SECCIÓN DE FORMULARIOS (Abierta para que veas tu UID) -->
+        <!-- SECCIÓN DE FORMULARIOS -->
         <div id="adminSection" class="hidden">
-            <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold;"></p>
-            
-            <!-- CAJA PARA MOSTRAR TU UID -->
-            <div style="background: #121519; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333;">
-                <p style="margin: 0 0 5px 0; font-size: 14px; color: #aaa;">🔑 Tu UID de Firebase (Cópialo para ponerlo en el nodo Admins):</p>
-                <div class="uid-box" id="txtMiUid">Cargando UID...</div>
-            </div>
-
+            <p id="txtAdminInfo" style="text-align: center; color: #00E676;"></p>
             <hr style="border-color: #333; margin: 20px 0;">
 
-            <!-- ACTUALIZAR META DE ARMAS -->
             <h3>Actualizar Meta de Armas</h3>
             <div class="form-group">
                 <label>Categoría:</label>
@@ -70,7 +61,6 @@
 
             <hr style="border-color: #333; margin: 30px 0;">
 
-            <!-- ACTUALIZAR VIDEOS YOUTUBE -->
             <h3>Actualizar Videos de la Comunidad</h3>
             <div class="form-group">
                 <label>Título de la Jugada de la Semana:</label>
@@ -85,57 +75,87 @@
             
             <p id="mensaje"></p>
         </div>
+
+        <!-- CONSOLA VISUAL DE DEPURACIÓN -->
+        <div class="debug-box" id="debugLog">Iniciando sistema...</div>
     </div>
 
     <script>
-        // CONFIGURACIÓN DE FIREBASE
+        const logBox = document.getElementById('debugLog');
+        function log(text) {
+            console.log(text);
+            logBox.innerHTML += "<br>> " + text;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
         const firebaseConfig = {
-            apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",
+            apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",[cite: 1]
             authDomain: "zona-de-comando.firebaseapp.com",
-            databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",
-            projectId: "zona-de-comando",
-            storageBucket: "zona-de-comando.firebasestorage.app",
-            messagingSenderId: "395464987840",
-            appId: "1:395464987840:android:e80b1c15a39218eec70925"
+            databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",[cite: 1]
+            projectId: "zona-de-comando",[cite: 1]
+            storageBucket: "zona-de-comando.firebasestorage.app",[cite: 1]
+            messagingSenderId: "395464987840",[cite: 1]
+            appId: "1:395464987840:android:e80b1c15a39218eec70925"[cite: 1]
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
+        log("Firebase inicializado correctamente.");
 
         const loginSection = document.getElementById('loginSection');
         const adminSection = document.getElementById('adminSection');
         const btnLogin = document.getElementById('btnLogin');
         const txtAdminInfo = document.getElementById('txtAdminInfo');
-        const txtMiUid = document.getElementById('txtMiUid');
         const mensaje = document.getElementById('mensaje');
 
-        // Botón de Login usando Redirección
         btnLogin.addEventListener('click', () => {
+            log("Botón presionado. Solicitando redirección a Google...");
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithRedirect(provider).catch(error => {
-                alert("Error al iniciar sesión: " + error.message);
+                log("ERROR EN REDIRECCIÓN: " + error.message);
             });
         });
 
-        auth.getRedirectResult().catch(error => {
-            alert("Error en redirección: " + error.message);
+        // Comprobar resultado de redirección
+        auth.getRedirectResult().then((result) => {
+            if (result.user) {
+                log("Redirección exitosa. Usuario: " + result.user.email);
+            } else {
+                log("No hay resultado de redirección pendiente.");
+            }
+        }).catch((error) => {
+            log("ERROR GET REDIRECT: " + error.code + " - " + error.message);
         });
 
-        // Al iniciar sesión, mostramos los datos en pantalla sin bloquear
+        // Monitorear cambios de usuario
         auth.onAuthStateChanged(user => {
             if (user) {
-                loginSection.classList.add('hidden');
-                adminSection.classList.remove('hidden');
-                txtAdminInfo.innerText = "Conectado como: " + user.email;
-                txtMiUid.innerText = user.uid; // ¡Aquí verás tu UID exacto en pantalla!
+                log("AuthState: Usuario detectado -> " + user.email + " (UID: " + user.uid + ")");
+                log("Verificando permisos en el nodo Admins...");
+                
+                db.ref("Admins/" + user.uid).once("value").then(snapshot => {
+                    if (snapshot.exists() && snapshot.val() === true) {
+                        log("¡Permisos de Administrador confirmados!");
+                        loginSection.classList.add('hidden');
+                        adminSection.classList.remove('hidden');
+                        txtAdminInfo.innerText = "Conectado como: " + user.email;
+                    } else {
+                        log("ACCESO DENEGADO: El UID " + user.uid + " no está en el nodo Admins.");
+                        alert("Acceso denegado: Tu cuenta no está registrada como administrador en Firebase.");
+                        auth.signOut();
+                    }
+                }).catch(err => {
+                    log("ERROR DB: " + err.message);
+                });
             } else {
+                log("AuthState: Ningún usuario ha iniciado sesión.");
                 loginSection.classList.remove('hidden');
                 adminSection.classList.add('hidden');
             }
         });
 
-        // Guardar Armas en Firebase
+        // Guardar Armas
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
             const cat = document.getElementById('selCategoria').value;
             const fNombre = document.getElementById('fusilNombre').value;
@@ -157,11 +177,11 @@
                 mensaje.innerText = "¡Meta de armas actualizada con éxito!";
             }).catch(error => {
                 mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error de permisos: Asegúrate de haber agregado tu UID al nodo Admins en Firebase.";
+                mensaje.innerText = "Error: " + error.message;
             });
         });
 
-        // Guardar Videos en Firebase
+        // Guardar Videos
         document.getElementById('btnGuardarVideos').addEventListener('click', () => {
             const jTitulo = document.getElementById('jugadaTitulo').value;
             const jUrl = document.getElementById('jugadaUrl').value;
@@ -180,7 +200,7 @@
                 mensaje.innerText = "¡Jugada de la semana actualizada con éxito!";
             }).catch(error => {
                 mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error de permisos: Asegúrate de haber agregado tu UID al nodo Admins en Firebase.";
+                mensaje.innerText = "Error: " + error.message;
             });
         });
     </script>
