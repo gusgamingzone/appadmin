@@ -16,6 +16,7 @@
         button:hover { background: #00c853; }
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; }
+        .uid-box { background: #0d0f12; padding: 10px; border: 1px dashed #00E676; border-radius: 6px; word-break: break-all; font-family: monospace; color: #00E676; margin: 10px 0; }
     </style>
 
     <!-- Importar Firebase SDK desde CDN -->
@@ -31,13 +32,20 @@
 
         <!-- SECCIÓN DE LOGIN -->
         <div id="loginSection" style="text-align: center;">
-            <p>Inicia sesión con tu cuenta de Administrador para continuar.</p>
+            <p>Inicia sesión con tu cuenta de Google para obtener tu UID y administrar el clan.</p>
             <button id="btnLogin">Iniciar sesión con Google</button>
         </div>
 
-        <!-- SECCIÓN DE FORMULARIOS (Oculta hasta que sea Admin) -->
+        <!-- SECCIÓN DE FORMULARIOS (Abierta para que veas tu UID) -->
         <div id="adminSection" class="hidden">
-            <p id="txtAdminInfo" style="text-align: center; color: #00E676;"></p>
+            <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold;"></p>
+            
+            <!-- CAJA PARA MOSTRAR TU UID -->
+            <div style="background: #121519; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333;">
+                <p style="margin: 0 0 5px 0; font-size: 14px; color: #aaa;">🔑 Tu UID de Firebase (Cópialo para ponerlo en el nodo Admins):</p>
+                <div class="uid-box" id="txtMiUid">Cargando UID...</div>
+            </div>
+
             <hr style="border-color: #333; margin: 20px 0;">
 
             <!-- ACTUALIZAR META DE ARMAS -->
@@ -99,6 +107,7 @@
         const adminSection = document.getElementById('adminSection');
         const btnLogin = document.getElementById('btnLogin');
         const txtAdminInfo = document.getElementById('txtAdminInfo');
+        const txtMiUid = document.getElementById('txtMiUid');
         const mensaje = document.getElementById('mensaje');
 
         // Botón de Login usando Redirección
@@ -109,28 +118,18 @@
             });
         });
 
-        // Manejar el resultado de la redirección
         auth.getRedirectResult().catch(error => {
             alert("Error en redirección: " + error.message);
         });
 
-        // Monitorear estado de autenticación con depuración de UID
+        // Al iniciar sesión, mostramos los datos en pantalla sin bloquear
         auth.onAuthStateChanged(user => {
             if (user) {
-                db.ref("Admins/" + user.uid).once("value").then(snapshot => {
-                    if (snapshot.exists() && snapshot.val() === true) {
-                        loginSection.classList.add('hidden');
-                        adminSection.classList.remove('hidden');
-                        txtAdminInfo.innerText = "Conectado como: " + user.email;
-                    } else {
-                        alert("Acceso denegado.\nTu UID actual es:\n" + user.uid + "\n\nAsegúrate de copiar este código exacto y ponerlo en el nodo Admins de tu Realtime Database.");
-                        auth.signOut();
-                    }
-                }).catch(err => {
-                    alert("Error consultando base de datos: " + err.message);
-                });
+                loginSection.classList.add('hidden');
+                adminSection.classList.remove('hidden');
+                txtAdminInfo.innerText = "Conectado como: " + user.email;
+                txtMiUid.innerText = user.uid; // ¡Aquí verás tu UID exacto en pantalla!
             } else {
-                loginSection.classList.add('hidden'); // Ocultar mientras carga
                 loginSection.classList.remove('hidden');
                 adminSection.classList.add('hidden');
             }
@@ -158,7 +157,7 @@
                 mensaje.innerText = "¡Meta de armas actualizada con éxito!";
             }).catch(error => {
                 mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error: " + error.message;
+                mensaje.innerText = "Error de permisos: Asegúrate de haber agregado tu UID al nodo Admins en Firebase.";
             });
         });
 
@@ -181,7 +180,7 @@
                 mensaje.innerText = "¡Jugada de la semana actualizada con éxito!";
             }).catch(error => {
                 mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error: " + error.message;
+                mensaje.innerText = "Error de permisos: Asegúrate de haber agregado tu UID al nodo Admins en Firebase.";
             });
         });
     </script>
