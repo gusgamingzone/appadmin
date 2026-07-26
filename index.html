@@ -80,15 +80,15 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE FIREBASE EXTRAÍDA DE TU ARCHIVO
+        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
-            apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",[cite: 1]
+            apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",
             authDomain: "zona-de-comando.firebaseapp.com",
-            databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",[cite: 1]
-            projectId: "zona-de-comando",[cite: 1]
-            storageBucket: "zona-de-comando.firebasestorage.app",[cite: 1]
-            messagingSenderId: "395464987840",[cite: 1]
-            appId: "1:395464987840:android:e80b1c15a39218eec70925"[cite: 1]
+            databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",
+            projectId: "zona-de-comando",
+            storageBucket: "zona-de-comando.firebasestorage.app",
+            messagingSenderId: "395464987840",
+            appId: "1:395464987840:android:e80b1c15a39218eec70925"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -101,18 +101,22 @@
         const txtAdminInfo = document.getElementById('txtAdminInfo');
         const mensaje = document.getElementById('mensaje');
 
-        // Botón de Login con Google
+        // Botón de Login usando Redirección (Evita bloqueadores de pop-ups)
         btnLogin.addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => {
+            auth.signInWithRedirect(provider).catch(error => {
                 alert("Error al iniciar sesión: " + error.message);
             });
+        });
+
+        // Manejar el resultado al regresar de la redirección de Google
+        auth.getRedirectResult().catch(error => {
+            alert("Error en redirección: " + error.message);
         });
 
         // Monitorear estado de autenticación
         auth.onAuthStateChanged(user => {
             if (user) {
-                // Verificar si el UID está en el nodo Admins de Firebase
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
                     if (snapshot.exists() && snapshot.val() === true) {
                         loginSection.classList.add('hidden');
