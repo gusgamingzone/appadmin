@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Depuración</title>
+    <title>Panel de Administración - GusGamingZone</title>
     <style>
         body { background-color: #0d0f12; color: #ffffff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #1a1d21; padding: 20px; border-radius: 12px; border: 2px solid #00E676; }
@@ -15,7 +15,8 @@
         button:hover { background: #00c853; }
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; }
-        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-top: 20px; max-height: 140px; overflow-y: auto; border: 1px solid #333; }
+        .uid-box { background: #0d0f12; padding: 12px; border: 1px dashed #00E676; border-radius: 6px; word-break: break-all; font-family: monospace; color: #00E676; margin: 10px 0; font-size: 14px; text-align: center; }
+        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-top: 20px; max-height: 100px; overflow-y: auto; border: 1px solid #333; }
     </style>
 
     <!-- Importar Firebase SDK desde CDN -->
@@ -31,15 +32,23 @@
 
         <!-- SECCIÓN DE LOGIN -->
         <div id="loginSection" style="text-align: center;">
-            <p>Inicia sesión con tu cuenta de Administrador para continuar.</p>
+            <p>Inicia sesión con tu cuenta de Google para acceder al panel.</p>
             <button id="btnLogin">Iniciar sesión con Google</button>
         </div>
 
-        <!-- SECCIÓN DE FORMULARIOS -->
+        <!-- SECCIÓN DE FORMULARIOS (Se muestra al iniciar sesión) -->
         <div id="adminSection" class="hidden">
-            <p id="txtAdminInfo" style="text-align: center; color: #00E676;"></p>
+            <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold;"></p>
+            
+            <!-- AVISO DE UID PARA CONFIGURAR ADMIN -->
+            <div id="avisoAdmin" style="background: #121519; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; display: none;">
+                <p style="margin: 0 0 5px 0; font-size: 13px; color: #ffeb3b;">⚠️ Tu cuenta aún no está registrada como Administrador en Firebase. Copia este UID y agrégalo en el nodo <b>Admins</b>:</p>
+                <div class="uid-box" id="txtMiUid">Cargando...</div>
+            </div>
+
             <hr style="border-color: #333; margin: 20px 0;">
 
+            <!-- ACTUALIZAR META DE ARMAS -->
             <h3>Actualizar Meta de Armas</h3>
             <div class="form-group">
                 <label>Categoría:</label>
@@ -61,6 +70,7 @@
 
             <hr style="border-color: #333; margin: 30px 0;">
 
+            <!-- ACTUALIZAR VIDEOS YOUTUBE -->
             <h3>Actualizar Videos de la Comunidad</h3>
             <div class="form-group">
                 <label>Título de la Jugada de la Semana:</label>
@@ -76,7 +86,7 @@
             <p id="mensaje"></p>
         </div>
 
-        <!-- CONSOLA VISUAL DE DEPURACIÓN -->
+        <!-- CONSOLA DE DEPURACIÓN -->
         <div class="debug-box" id="debugLog">Iniciando sistema...</div>
     </div>
 
@@ -88,65 +98,112 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        try {
-            log("Cargando configuración de Firebase...");
-            const firebaseConfig = {
-                apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",
-                authDomain: "zona-de-comando.firebaseapp.com",
-                databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",
-                projectId: "zona-de-comando",
-                storageBucket: "zona-de-comando.firebasestorage.app",
-                messagingSenderId: "395464987840",
-                appId: "1:395464987840:android:e80b1c15a39218eec70925"
-            };
+        const firebaseConfig = {
+            apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",
+            authDomain: "zona-de-comando.firebaseapp.com",
+            databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",
+            projectId: "zona-de-comando",
+            storageBucket: "zona-de-comando.firebasestorage.app",
+            messagingSenderId: "395464987840",
+            appId: "1:395464987840:android:e80b1c15a39218eec70925"
+        };
 
-            firebase.initializeApp(firebaseConfig);
-            log("Firebase inicializado con éxito.");
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        log("Firebase inicializado con éxito.");
 
-            const auth = firebase.auth();
-            const db = firebase.database();
+        const loginSection = document.getElementById('loginSection');
+        const adminSection = document.getElementById('adminSection');
+        const btnLogin = document.getElementById('btnLogin');
+        const txtAdminInfo = document.getElementById('txtAdminInfo');
+        const avisoAdmin = document.getElementById('avisoAdmin');
+        const txtMiUid = document.getElementById('txtMiUid');
+        const mensaje = document.getElementById('mensaje');
 
-            const loginSection = document.getElementById('loginSection');
-            const adminSection = document.getElementById('adminSection');
-            const btnLogin = document.getElementById('btnLogin');
-            const txtAdminInfo = document.getElementById('txtAdminInfo');
-            const mensaje = document.getElementById('mensaje');
+        btnLogin.addEventListener('click', () => {
+            log("Redirigiendo a Google...");
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithRedirect(provider).catch(error => {
+                log("ERROR: " + error.message);
+            });
+        });
 
-            btnLogin.addEventListener('click', () => {
-                log("¡Botón de Google presionado!");
-                const provider = new firebase.auth.GoogleAuthProvider();
-                auth.signInWithRedirect(provider).catch(error => {
-                    log("ERROR AL REDIRIGIR: " + error.message);
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                log("Usuario autenticado: " + user.email);
+                loginSection.classList.add('hidden');
+                adminSection.classList.remove('hidden');
+                txtAdminInfo.innerText = "Conectado como: " + user.email;
+
+                // Verificar si es Admin
+                db.ref("Admins/" + user.uid).once("value").then(snapshot => {
+                    if (snapshot.exists() && snapshot.val() === true) {
+                        log("¡Permisos de Administrador confirmados!");
+                        avisoAdmin.style.display = "none"; // Ocultar aviso si ya es admin
+                    } else {
+                        log("UID no encontrado en Admins. Mostrando código UID...");
+                        avisoAdmin.style.display = "block";
+                        txtMiUid.innerText = user.uid; // Muestra tu UID en pantalla para que lo copies
+                    }
+                }).catch(err => {
+                    log("Error verificando base de datos: " + err.message);
                 });
-            });
+            } else {
+                log("Esperando inicio de sesión...");
+                loginSection.classList.remove('hidden');
+                adminSection.classList.add('hidden');
+            }
+        });
 
-            auth.getRedirectResult().catch(error => {
-                log("ERROR GET REDIRECT: " + error.message);
-            });
+        // Guardar Armas
+        document.getElementById('btnGuardarArmas').addEventListener('click', () => {
+            const cat = document.getElementById('selCategoria').value;
+            const fNombre = document.getElementById('fusilNombre').value;
+            const fCodigo = document.getElementById('fusilCodigo').value;
+            const fUrl = document.getElementById('fusilUrl').value;
 
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    log("Usuario detectado: " + user.email);
-                    db.ref("Admins/" + user.uid).once("value").then(snapshot => {
-                        if (snapshot.exists() && snapshot.val() === true) {
-                            log("Acceso concedido como Administrador.");
-                            loginSection.classList.add('hidden');
-                            adminSection.classList.remove('hidden');
-                            txtAdminInfo.innerText = "Conectado como: " + user.email;
-                        } else {
-                            log("ACCESO DENEGADO. UID: " + user.uid);
-                            alert("Acceso denegado: Tu cuenta no está registrada como administrador.");
-                            auth.signOut();
-                        }
-                    });
-                } else {
-                    log("Esperando inicio de sesión...");
-                }
-            });
+            if(!fNombre || !fCodigo || !fUrl) {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Por favor completa todos los campos del fusil.";
+                return;
+            }
 
-        } catch (err) {
-            log("EXCEPCIÓN CRÍTICA: " + err.message);
-        }
+            db.ref("MetaArmas/" + cat).update({
+                fusil_nombre: fNombre,
+                fusil_codigo: fCodigo,
+                fusil_url: fUrl
+            }).then(() => {
+                mensaje.style.color = "#00E676";
+                mensaje.innerText = "¡Meta de armas actualizada con éxito!";
+            }).catch(error => {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Error de permisos (falta agregar tu UID al nodo Admins).";
+            });
+        });
+
+        // Guardar Videos
+        document.getElementById('btnGuardarVideos').addEventListener('click', () => {
+            const jTitulo = document.getElementById('jugadaTitulo').value;
+            const jUrl = document.getElementById('jugadaUrl').value;
+
+            if(!jTitulo || !jUrl) {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Por favor completa los campos de la jugada.";
+                return;
+            }
+
+            db.ref("VideosComunidad/jugada_semana").set({
+                titulo: jTitulo,
+                url: jUrl
+            }).then(() => {
+                mensaje.style.color = "#00E676";
+                mensaje.innerText = "¡Jugada de la semana actualizada con éxito!";
+            }).catch(error => {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Error de permisos (falta agregar tu UID al nodo Admins).";
+            });
+        });
     </script>
 </body>
 </html>
