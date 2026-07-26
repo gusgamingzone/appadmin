@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - GusGamingZone</title>
+    <title>Panel de Administración - Depuración</title>
     <style>
         body { background-color: #0d0f12; color: #ffffff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #1a1d21; padding: 20px; border-radius: 12px; border: 2px solid #00E676; }
@@ -16,7 +16,7 @@
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; }
         .uid-box { background: #0d0f12; padding: 12px; border: 1px dashed #00E676; border-radius: 6px; word-break: break-all; font-family: monospace; color: #00E676; margin: 10px 0; font-size: 14px; text-align: center; }
-        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-top: 20px; max-height: 100px; overflow-y: auto; border: 1px solid #333; }
+        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-top: 20px; max-height: 150px; overflow-y: auto; border: 1px solid #333; }
     </style>
 
     <!-- Importar Firebase SDK desde CDN -->
@@ -36,19 +36,17 @@
             <button id="btnLogin">Iniciar sesión con Google</button>
         </div>
 
-        <!-- SECCIÓN DE FORMULARIOS (Se muestra al iniciar sesión) -->
+        <!-- SECCIÓN DE FORMULARIOS -->
         <div id="adminSection" class="hidden">
             <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold;"></p>
             
-            <!-- AVISO DE UID PARA CONFIGURAR ADMIN -->
             <div id="avisoAdmin" style="background: #121519; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; display: none;">
-                <p style="margin: 0 0 5px 0; font-size: 13px; color: #ffeb3b;">⚠️ Tu cuenta aún no está registrada como Administrador en Firebase. Copia este UID y agrégalo en el nodo <b>Admins</b>:</p>
+                <p style="margin: 0 0 5px 0; font-size: 13px; color: #ffeb3b;">⚠️ Tu cuenta no está registrada como Administrador. Copia este UID y agrégalo en el nodo <b>Admins</b>:</p>
                 <div class="uid-box" id="txtMiUid">Cargando...</div>
             </div>
 
             <hr style="border-color: #333; margin: 20px 0;">
 
-            <!-- ACTUALIZAR META DE ARMAS -->
             <h3>Actualizar Meta de Armas</h3>
             <div class="form-group">
                 <label>Categoría:</label>
@@ -70,7 +68,6 @@
 
             <hr style="border-color: #333; margin: 30px 0;">
 
-            <!-- ACTUALIZAR VIDEOS YOUTUBE -->
             <h3>Actualizar Videos de la Comunidad</h3>
             <div class="form-group">
                 <label>Título de la Jugada de la Semana:</label>
@@ -121,33 +118,38 @@
         const txtMiUid = document.getElementById('txtMiUid');
         const mensaje = document.getElementById('mensaje');
 
+        // Usamos Popup con manejo estricto de errores impresos en pantalla
         btnLogin.addEventListener('click', () => {
-            log("Redirigiendo a Google...");
+            log("Botón presionado. Abriendo ventana de Google...");
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider).catch(error => {
-                log("ERROR: " + error.message);
-            });
+            
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    log("¡Login por popup exitoso! Usuario: " + result.user.email);
+                })
+                .catch((error) => {
+                    log("ERROR DE LOGIN: " + error.code + " -> " + error.message);
+                });
         });
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                log("Usuario autenticado: " + user.email);
+                log("AuthState: Usuario detectado (" + user.email + ")");
                 loginSection.classList.add('hidden');
                 adminSection.classList.remove('hidden');
                 txtAdminInfo.innerText = "Conectado como: " + user.email;
 
-                // Verificar si es Admin
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
                     if (snapshot.exists() && snapshot.val() === true) {
-                        log("¡Permisos de Administrador confirmados!");
-                        avisoAdmin.style.display = "none"; // Ocultar aviso si ya es admin
+                        log("Permisos de Admin confirmados.");
+                        avisoAdmin.style.display = "none";
                     } else {
-                        log("UID no encontrado en Admins. Mostrando código UID...");
+                        log("UID no es admin. Mostrando caja de UID.");
                         avisoAdmin.style.display = "block";
-                        txtMiUid.innerText = user.uid; // Muestra tu UID en pantalla para que lo copies
+                        txtMiUid.innerText = user.uid;
                     }
                 }).catch(err => {
-                    log("Error verificando base de datos: " + err.message);
+                    log("Error DB Admins: " + err.message);
                 });
             } else {
                 log("Esperando inicio de sesión...");
@@ -178,7 +180,7 @@
                 mensaje.innerText = "¡Meta de armas actualizada con éxito!";
             }).catch(error => {
                 mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error de permisos (falta agregar tu UID al nodo Admins).";
+                mensaje.innerText = "Error: " + error.message;
             });
         });
 
@@ -201,7 +203,7 @@
                 mensaje.innerText = "¡Jugada de la semana actualizada con éxito!";
             }).catch(error => {
                 mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error de permisos (falta agregar tu UID al nodo Admins).";
+                mensaje.innerText = "Error: " + error.message;
             });
         });
     </script>
