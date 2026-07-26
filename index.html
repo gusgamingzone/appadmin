@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - GusGamingZone</title>
+    <!-- Estilos modernos estilo gamer oscuro -->
+    <style>
+        body { background-color: #0d0f12; color: #ffffff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #1a1d21; padding: 20px; border-radius: 12px; border: 2px solid #00E676; }
+        h1, h2 { color: #00E676; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #333; background: #0d0f12; color: #fff; box-sizing: border-box; }
+        button { background: #00E676; color: #0d0f12; border: none; padding: 12px; width: 100%; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #00c853; }
+        .hidden { display: none; }
+        #mensaje { text-align: center; margin-top: 15px; font-weight: bold; }
+    </style>
+
+    <!-- Importar Firebase SDK desde CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ZONA DE COMANDO</h1>
+        <h2>Panel de Administración</h2>
+
+        <!-- SECCIÓN DE LOGIN -->
+        <div id="loginSection" style="text-align: center;">
+            <p>Inicia sesión con tu cuenta de Administrador para continuar.</p>
+            <button id="btnLogin">Iniciar sesión con Google</button>
+        </div>
+
+        <!-- SECCIÓN DE FORMULARIOS (Oculta hasta que sea Admin) -->
+        <div id="adminSection" class="hidden">
+            <p id="txtAdminInfo" style="text-align: center; color: #00E676;"></p>
+            <hr style="border-color: #333; margin: 20px 0;">
+
+            <!-- ACTUALIZAR META DE ARMAS -->
+            <h3>Actualizar Meta de Armas</h3>
+            <div class="form-group">
+                <label>Categoría:</label>
+                <select id="selCategoria">
+                    <option value="warzone">Warzone</option>
+                    <option value="multijugador">Multijugador</option>
+                    <option value="endgame">Endgame</option>
+                    <option value="ranked_warzone">Ranked Warzone</option>
+                    <option value="ranked_multi">Ranked Multi</option>
+                </select>
+            </div>
+            
+            <h4 style="color: #aaa; margin-bottom: 5px;">Fusil de Asalto</h4>
+            <div class="form-group"><input type="text" id="fusilNombre" placeholder="Nombre del Fusil"></div>
+            <div class="form-group"><input type="text" id="fusilCodigo" placeholder="Código de la clase"></div>
+            <div class="form-group"><input type="text" id="fusilUrl" placeholder="URL de la imagen"></div>
+
+            <button id="btnGuardarArmas">Guardar Cambios de Armas</button>
+
+            <hr style="border-color: #333; margin: 30px 0;">
+
+            <!-- ACTUALIZAR VIDEOS YOUTUBE -->
+            <h3>Actualizar Videos de la Comunidad</h3>
+            <div class="form-group">
+                <label>Título de la Jugada de la Semana:</label>
+                <input type="text" id="jugadaTitulo" placeholder="Ej: ¡La mejor baja triple!">
+            </div>
+            <div class="form-group">
+                <label>Enlace de YouTube (Jugada de la Semana):</label>
+                <input type="text" id="jugadaUrl" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+
+            <button id="btnGuardarVideos">Guardar Jugada de la Semana</button>
+            
+            <p id="mensaje"></p>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN DE FIREBASE (Usa los mismos datos de tu app Android)
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_AUTH_DOMAIN",
+            databaseURL: "TU_DATABASE_URL",
+            projectId: "TU_PROJECT_ID",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        const loginSection = document.getElementById('loginSection');
+        const adminSection = document.getElementById('adminSection');
+        const btnLogin = document.getElementById('btnLogin');
+        const txtAdminInfo = document.getElementById('txtAdminInfo');
+        const mensaje = document.getElementById('mensaje');
+
+        // Botón de Login con Google
+        btnLogin.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(error => {
+                alert("Error al iniciar sesión: " + error.message);
+            });
+        });
+
+        // Monitorear estado de autenticación
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // Verificar si el UID está en el nodo Admins de Firebase
+                db.ref("Admins/" + user.uid).once("value").then(snapshot => {
+                    if (snapshot.exists() && snapshot.val() === true) {
+                        loginSection.classList.add('hidden');
+                        adminSection.classList.remove('hidden');
+                        txtAdminInfo.innerText = "Conectado como: " + user.email;
+                    } else {
+                        alert("Acceso denegado: Esta cuenta no tiene permisos de administrador.");
+                        auth.signOut();
+                    }
+                });
+            } else {
+                loginSection.classList.remove('hidden');
+                adminSection.classList.add('hidden');
+            }
+        });
+
+        // Guardar Armas en Firebase
+        document.getElementById('btnGuardarArmas').addEventListener('click', () => {
+            const cat = document.getElementById('selCategoria').value;
+            const fNombre = document.getElementById('fusilNombre').value;
+            const fCodigo = document.getElementById('fusilCodigo').value;
+            const fUrl = document.getElementById('fusilUrl').value;
+
+            if(!fNombre || !fCodigo || !fUrl) {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Por favor completa todos los campos del fusil.";
+                return;
+            }
+
+            db.ref("MetaArmas/" + cat).update({
+                fusil_nombre: fNombre,
+                fusil_codigo: fCodigo,
+                fusil_url: fUrl
+            }).then(() => {
+                mensaje.style.color = "#00E676";
+                mensaje.innerText = "¡Meta de armas actualizada con éxito!";
+            }).catch(error => {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Error: " + error.message;
+            });
+        });
+
+        // Guardar Videos en Firebase
+        document.getElementById('btnGuardarVideos').addEventListener('click', () => {
+            const jTitulo = document.getElementById('jugadaTitulo').value;
+            const jUrl = document.getElementById('jugadaUrl').value;
+
+            if(!jTitulo || !jUrl) {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Por favor completa los campos de la jugada.";
+                return;
+            }
+
+            db.ref("VideosComunidad/jugada_semana").set({
+                titulo: jTitulo,
+                url: jUrl
+            }).then(() => {
+                mensaje.style.color = "#00E676";
+                mensaje.innerText = "¡Jugada de la semana actualizada con éxito!";
+            }).catch(error => {
+                mensaje.style.color = "#FF5252";
+                mensaje.innerText = "Error: " + error.message;
+            });
+        });
+    </script>
+</body>
+</html>
