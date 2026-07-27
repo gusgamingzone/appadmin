@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Depuración</title>
+    <title>Panel de Administración - Zona de Comando</title>
     <style>
         body { background-color: #0d0f12; color: #ffffff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #1a1d21; padding: 20px; border-radius: 12px; border: 2px solid #00E676; }
+        .container { max-width: 600px; margin: 0 auto; background: #1a1d21; padding: 30px; border-radius: 12px; border: 2px solid #00E676; box-shadow: 0 0 20px rgba(0, 230, 118, 0.2); }
         h1, h2 { color: #00E676; text-align: center; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #333; background: #0d0f12; color: #fff; box-sizing: border-box; }
-        button { background: #00E676; color: #0d0f12; border: none; padding: 12px; width: 100%; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #aaa; }
+        input, select { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #333; background: #0d0f12; color: #fff; box-sizing: border-box; font-size: 14px; }
+        input:focus, select:focus { border-color: #00E676; outline: none; }
+        button { background: #00E676; color: #0d0f12; border: none; padding: 14px; width: 100%; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.3s; }
         button:hover { background: #00c853; }
+        .btn-danger { background: #FF5252; margin-top: 20px; }
+        .btn-danger:hover { background: #D50000; }
         .hidden { display: none; }
-        #mensaje { text-align: center; margin-top: 15px; font-weight: bold; }
-        .uid-box { background: #0d0f12; padding: 12px; border: 1px dashed #00E676; border-radius: 6px; word-break: break-all; font-family: monospace; color: #00E676; margin: 10px 0; font-size: 14px; text-align: center; }
-        .debug-box { background: #000; color: #00FF66; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; margin-top: 20px; max-height: 150px; overflow-y: auto; border: 1px solid #333; }
+        #mensaje { text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 6px; }
     </style>
 
     <!-- Importar Firebase SDK desde CDN -->
@@ -28,28 +29,32 @@
 
     <div class="container">
         <h1>ZONA DE COMANDO</h1>
-        <h2>Panel de Administración</h2>
+        <h2>Panel Administrativo</h2>
 
-        <!-- SECCIÓN DE LOGIN -->
-        <div id="loginSection" style="text-align: center;">
-            <p>Inicia sesión con tu cuenta de Google para acceder al panel.</p>
-            <button id="btnLogin">Iniciar sesión con Google</button>
+        <!-- SECCIÓN DE LOGIN MANUAL -->
+        <div id="loginSection">
+            <p style="text-align: center; color: #888; margin-bottom: 25px;">Ingresa tus credenciales autorizadas.</p>
+            
+            <div class="form-group">
+                <label>Correo de Administrador</label>
+                <input type="email" id="inEmail" placeholder="ejemplo@zonadecomando.com">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="inPassword" placeholder="••••••••">
+            </div>
+
+            <button id="btnLogin">Acceder al Sistema</button>
+            <p id="loginError" style="color: #FF5252; text-align: center; font-size: 14px; margin-top: 10px;"></p>
         </div>
 
         <!-- SECCIÓN DE FORMULARIOS -->
         <div id="adminSection" class="hidden">
-            <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold;"></p>
+            <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 15px;"></p>
             
-            <div id="avisoAdmin" style="background: #121519; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; display: none;">
-                <p style="margin: 0 0 5px 0; font-size: 13px; color: #ffeb3b;">⚠️ Tu cuenta no está registrada como Administrador. Copia este UID y agrégalo en el nodo <b>Admins</b>:</p>
-                <div class="uid-box" id="txtMiUid">Cargando...</div>
-            </div>
-
-            <hr style="border-color: #333; margin: 20px 0;">
-
             <h3>Actualizar Meta de Armas</h3>
             <div class="form-group">
-                <label>Categoría:</label>
+                <label>Categoría del Juego:</label>
                 <select id="selCategoria">
                     <option value="warzone">Warzone</option>
                     <option value="multijugador">Multijugador</option>
@@ -59,42 +64,34 @@
                 </select>
             </div>
             
-            <h4 style="color: #aaa; margin-bottom: 5px;">Fusil de Asalto</h4>
-            <div class="form-group"><input type="text" id="fusilNombre" placeholder="Nombre del Fusil"></div>
-            <div class="form-group"><input type="text" id="fusilCodigo" placeholder="Código de la clase"></div>
-            <div class="form-group"><input type="text" id="fusilUrl" placeholder="URL de la imagen"></div>
+            <div class="form-group"><input type="text" id="fusilNombre" placeholder="Nombre del Arma (Ej: MCW)"></div>
+            <div class="form-group"><input type="text" id="fusilCodigo" placeholder="Código / Accesorios"></div>
+            <div class="form-group"><input type="text" id="fusilUrl" placeholder="URL de la imagen del arma"></div>
 
-            <button id="btnGuardarArmas">Guardar Cambios de Armas</button>
+            <button id="btnGuardarArmas">Guardar Meta</button>
 
             <hr style="border-color: #333; margin: 30px 0;">
 
-            <h3>Actualizar Videos de la Comunidad</h3>
+            <h3>Actualizar Video Destacado</h3>
             <div class="form-group">
-                <label>Título de la Jugada de la Semana:</label>
-                <input type="text" id="jugadaTitulo" placeholder="Ej: ¡La mejor baja triple!">
+                <label>Título del Video:</label>
+                <input type="text" id="jugadaTitulo" placeholder="Ej: La mejor baja de la temporada">
             </div>
             <div class="form-group">
-                <label>Enlace de YouTube (Jugada de la Semana):</label>
+                <label>Enlace de YouTube:</label>
                 <input type="text" id="jugadaUrl" placeholder="https://www.youtube.com/watch?v=...">
             </div>
 
-            <button id="btnGuardarVideos">Guardar Jugada de la Semana</button>
+            <button id="btnGuardarVideos">Publicar Video</button>
             
             <p id="mensaje"></p>
-        </div>
 
-        <!-- CONSOLA DE DEPURACIÓN -->
-        <div class="debug-box" id="debugLog">Iniciando sistema...</div>
+            <button id="btnCerrarSesion" class="btn-danger">Cerrar Sesión</button>
+        </div>
     </div>
 
     <script>
-        const logBox = document.getElementById('debugLog');
-        function log(text) {
-            console.log(text);
-            logBox.innerHTML += "<br>> " + text;
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
+        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",
             authDomain: "zona-de-comando.firebaseapp.com",
@@ -108,103 +105,108 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        log("Firebase inicializado con éxito.");
 
+        // ELEMENTOS DEL DOM
         const loginSection = document.getElementById('loginSection');
         const adminSection = document.getElementById('adminSection');
         const btnLogin = document.getElementById('btnLogin');
+        const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+        const inEmail = document.getElementById('inEmail');
+        const inPassword = document.getElementById('inPassword');
+        const loginError = document.getElementById('loginError');
         const txtAdminInfo = document.getElementById('txtAdminInfo');
-        const avisoAdmin = document.getElementById('avisoAdmin');
-        const txtMiUid = document.getElementById('txtMiUid');
         const mensaje = document.getElementById('mensaje');
 
-        // Usamos Popup con manejo estricto de errores impresos en pantalla
+        // INICIAR SESIÓN MANUALMENTE
         btnLogin.addEventListener('click', () => {
-            log("Botón presionado. Abriendo ventana de Google...");
-            const provider = new firebase.auth.GoogleAuthProvider();
-            
-            auth.signInWithPopup(provider)
-                .then((result) => {
-                    log("¡Login por popup exitoso! Usuario: " + result.user.email);
-                })
+            const email = inEmail.value.trim();
+            const password = inPassword.value.trim();
+            loginError.innerText = "";
+
+            if(!email || !password) {
+                loginError.innerText = "Por favor ingresa correo y contraseña.";
+                return;
+            }
+
+            btnLogin.innerText = "Verificando...";
+            btnLogin.disabled = true;
+
+            auth.signInWithEmailAndPassword(email, password)
                 .catch((error) => {
-                    log("ERROR DE LOGIN: " + error.code + " -> " + error.message);
+                    btnLogin.innerText = "Acceder al Sistema";
+                    btnLogin.disabled = false;
+                    loginError.innerText = "Error: " + error.message;
                 });
         });
 
+        // CERRAR SESIÓN
+        btnCerrarSesion.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // DETECTAR ESTADO DE SESIÓN
         auth.onAuthStateChanged(user => {
             if (user) {
-                log("AuthState: Usuario detectado (" + user.email + ")");
-                loginSection.classList.add('hidden');
-                adminSection.classList.remove('hidden');
-                txtAdminInfo.innerText = "Conectado como: " + user.email;
-
+                // Verificar en Base de Datos si realmente es Admin
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
                     if (snapshot.exists() && snapshot.val() === true) {
-                        log("Permisos de Admin confirmados.");
-                        avisoAdmin.style.display = "none";
+                        loginSection.classList.add('hidden');
+                        adminSection.classList.remove('hidden');
+                        txtAdminInfo.innerText = "Operando como: " + user.email;
+                        inEmail.value = "";
+                        inPassword.value = "";
+                        btnLogin.innerText = "Acceder al Sistema";
+                        btnLogin.disabled = false;
                     } else {
-                        log("UID no es admin. Mostrando caja de UID.");
-                        avisoAdmin.style.display = "block";
-                        txtMiUid.innerText = user.uid;
+                        // Si se loguea pero no está en la lista de Admins
+                        auth.signOut();
+                        loginError.innerText = "ACCESO DENEGADO: Tu usuario no tiene permisos de administrador. Revisa tu UID en la base de datos.";
                     }
-                }).catch(err => {
-                    log("Error DB Admins: " + err.message);
                 });
             } else {
-                log("Esperando inicio de sesión...");
                 loginSection.classList.remove('hidden');
                 adminSection.classList.add('hidden');
+                mensaje.innerText = "";
             }
         });
 
-        // Guardar Armas
+        // FUNCIONES DE GUARDADO
+        function mostrarMensaje(texto, color) {
+            mensaje.style.color = color;
+            mensaje.style.background = "#121519";
+            mensaje.style.border = "1px solid " + color;
+            mensaje.innerText = texto;
+            setTimeout(() => { mensaje.innerText = ""; mensaje.style.background = "transparent"; mensaje.style.border = "none"; }, 5000);
+        }
+
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
             const cat = document.getElementById('selCategoria').value;
-            const fNombre = document.getElementById('fusilNombre').value;
-            const fCodigo = document.getElementById('fusilCodigo').value;
-            const fUrl = document.getElementById('fusilUrl').value;
+            const fNombre = document.getElementById('fusilNombre').value.trim();
+            const fCodigo = document.getElementById('fusilCodigo').value.trim();
+            const fUrl = document.getElementById('fusilUrl').value.trim();
 
             if(!fNombre || !fCodigo || !fUrl) {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Por favor completa todos los campos del fusil.";
+                mostrarMensaje("⚠️ Completa todos los campos del arma.", "#FF5252");
                 return;
             }
 
-            db.ref("MetaArmas/" + cat).update({
-                fusil_nombre: fNombre,
-                fusil_codigo: fCodigo,
-                fusil_url: fUrl
-            }).then(() => {
-                mensaje.style.color = "#00E676";
-                mensaje.innerText = "¡Meta de armas actualizada con éxito!";
-            }).catch(error => {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error: " + error.message;
-            });
+            db.ref("MetaArmas/" + cat).update({ fusil_nombre: fNombre, fusil_codigo: fCodigo, fusil_url: fUrl })
+                .then(() => mostrarMensaje("✔️ Meta guardada correctamente.", "#00E676"))
+                .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
 
-        // Guardar Videos
         document.getElementById('btnGuardarVideos').addEventListener('click', () => {
-            const jTitulo = document.getElementById('jugadaTitulo').value;
-            const jUrl = document.getElementById('jugadaUrl').value;
+            const jTitulo = document.getElementById('jugadaTitulo').value.trim();
+            const jUrl = document.getElementById('jugadaUrl').value.trim();
 
             if(!jTitulo || !jUrl) {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Por favor completa los campos de la jugada.";
+                mostrarMensaje("⚠️ Completa los campos del video.", "#FF5252");
                 return;
             }
 
-            db.ref("VideosComunidad/jugada_semana").set({
-                titulo: jTitulo,
-                url: jUrl
-            }).then(() => {
-                mensaje.style.color = "#00E676";
-                mensaje.innerText = "¡Jugada de la semana actualizada con éxito!";
-            }).catch(error => {
-                mensaje.style.color = "#FF5252";
-                mensaje.innerText = "Error: " + error.message;
-            });
+            db.ref("VideosComunidad/jugada_semana").set({ titulo: jTitulo, url: jUrl })
+                .then(() => mostrarMensaje("✔️ Video publicado correctamente.", "#00E676"))
+                .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
     </script>
 </body>
