@@ -36,19 +36,10 @@
         <!-- SECCIÓN DE LOGIN -->
         <div id="loginSection">
             <p style="text-align: center; color: #888; margin-bottom: 25px;">Ingresa tus credenciales autorizadas.</p>
-            
-            <div class="form-group">
-                <label>Correo Electrónico (Real)</label>
-                <input type="email" id="inEmail" placeholder="tu-correo@gmail.com">
-            </div>
-            <div class="form-group">
-                <label>Contraseña</label>
-                <input type="password" id="inPassword" placeholder="••••••••">
-            </div>
-
+            <div class="form-group"><label>Correo Electrónico (Real)</label><input type="email" id="inEmail" placeholder="tu-correo@gmail.com"></div>
+            <div class="form-group"><label>Contraseña</label><input type="password" id="inPassword" placeholder="••••••••"></div>
             <button id="btnLogin">Acceder al Sistema</button>
             <span class="link-recuperar" id="btnRecuperar">¿Olvidaste tu contraseña?</span>
-            
             <p id="loginError" style="text-align: center; font-size: 14px; margin-top: 15px;"></p>
         </div>
 
@@ -75,7 +66,7 @@
 
             <hr>
 
-            <!-- 2. VIDEOS DE LA COMUNIDAD (3 ESPACIOS) -->
+            <!-- 2. VIDEOS DE LA COMUNIDAD -->
             <h3>Actualizar Videos de la Comunidad</h3>
             <div class="form-group">
                 <label>Selecciona el espacio a actualizar:</label>
@@ -85,29 +76,27 @@
                     <option value="galeria/video2">Video Secundario 2 (Galería)</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Título del Video:</label>
-                <input type="text" id="jugadaTitulo" placeholder="Ej: La mejor baja de la temporada">
-            </div>
-            <div class="form-group">
-                <label>Enlace de YouTube:</label>
-                <input type="text" id="jugadaUrl" placeholder="https://www.youtube.com/watch?v=...">
-            </div>
+            <div class="form-group"><input type="text" id="jugadaTitulo" placeholder="Ej: La mejor baja de la temporada"></div>
+            <div class="form-group"><input type="text" id="jugadaUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
             <button id="btnGuardarVideos">Publicar Video</button>
 
             <hr>
 
             <!-- 3. ENLACES Y CONFIGURACIÓN -->
-            <h3>Actualizar Enlaces de la App</h3>
+            <h3>Actualizar Enlaces y Banners</h3>
             <div class="form-group">
-                <label>Enlace de Noticias de la Semana:</label>
-                <input type="text" id="urlNoticias" placeholder="URL web o de imagen para Noticias">
+                <label>Restaurar Imagen de Noticias:</label>
+                <input type="text" id="imgNoticias" placeholder="Pega aquí la URL de la FOTO para arreglar el banner">
             </div>
             <div class="form-group">
-                <label>Enlace de Guías:</label>
-                <input type="text" id="urlGuias" placeholder="URL web o de imagen para Guías">
+                <label>URL de Destino - Noticias (Link externo):</label>
+                <input type="text" id="urlNoticias" placeholder="https://...">
             </div>
-            <button id="btnGuardarEnlaces">Guardar Enlaces</button>
+            <div class="form-group">
+                <label>URL de Destino - Guías (Link externo):</label>
+                <input type="text" id="urlGuias" placeholder="https://...">
+            </div>
+            <button id="btnGuardarEnlaces">Guardar Enlaces / Imágenes</button>
             
             <p id="mensaje"></p>
             <button id="btnCerrarSesion" class="btn-danger">Cerrar Sesión</button>
@@ -140,54 +129,24 @@
         const txtAdminInfo = document.getElementById('txtAdminInfo');
         const mensaje = document.getElementById('mensaje');
 
-        // INICIAR SESIÓN
         btnLogin.addEventListener('click', () => {
             const email = inEmail.value.trim();
             const password = inPassword.value.trim();
-            
-            if(!email || !password) {
-                loginError.style.color = "#FF5252";
-                loginError.innerText = "Por favor ingresa correo y contraseña.";
-                return;
-            }
-
-            btnLogin.innerText = "Verificando...";
-            btnLogin.disabled = true;
-
-            auth.signInWithEmailAndPassword(email, password)
-                .catch((error) => {
-                    btnLogin.innerText = "Acceder al Sistema";
-                    btnLogin.disabled = false;
-                    loginError.style.color = "#FF5252";
-                    loginError.innerText = "Error: Verifica tus datos o tu conexión.";
-                });
+            if(!email || !password) { loginError.innerText = "Ingresa datos."; return; }
+            btnLogin.innerText = "Verificando..."; btnLogin.disabled = true;
+            auth.signInWithEmailAndPassword(email, password).catch(() => {
+                btnLogin.innerText = "Acceder al Sistema"; btnLogin.disabled = false; loginError.innerText = "Error en credenciales.";
+            });
         });
 
-        // RECUPERAR CONTRASEÑA
         btnRecuperar.addEventListener('click', () => {
             const email = inEmail.value.trim();
-            if(!email) {
-                loginError.style.color = "#FF5252";
-                loginError.innerText = "Escribe tu correo arriba y haz clic aquí de nuevo.";
-                return;
-            }
-            auth.sendPasswordResetEmail(email)
-                .then(() => {
-                    loginError.style.color = "#00E676";
-                    loginError.innerText = "✔️ Correo de recuperación enviado. Revisa tu bandeja de entrada.";
-                })
-                .catch((error) => {
-                    loginError.style.color = "#FF5252";
-                    loginError.innerText = "Error: " + error.message;
-                });
+            if(!email) { loginError.innerText = "Escribe tu correo arriba."; return; }
+            auth.sendPasswordResetEmail(email).then(() => { loginError.innerText = "Correo enviado."; }).catch(e => { loginError.innerText = e.message; });
         });
 
-        // CERRAR SESIÓN
-        btnCerrarSesion.addEventListener('click', () => {
-            auth.signOut();
-        });
+        btnCerrarSesion.addEventListener('click', () => auth.signOut());
 
-        // DETECTAR ESTADO DE SESIÓN
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
@@ -195,104 +154,66 @@
                         loginSection.classList.add('hidden');
                         adminSection.classList.remove('hidden');
                         txtAdminInfo.innerText = "Operando como: " + user.email;
-                        inEmail.value = "";
-                        inPassword.value = "";
-                        btnLogin.innerText = "Acceder al Sistema";
-                        btnLogin.disabled = false;
-                        loginError.innerText = "";
+                        inEmail.value = ""; inPassword.value = ""; loginError.innerText = ""; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
                     } else {
-                        auth.signOut();
-                        loginError.style.color = "#FF5252";
-                        loginError.innerText = "ACCESO DENEGADO: No eres administrador.";
-                        btnLogin.innerText = "Acceder al Sistema";
-                        btnLogin.disabled = false;
+                        auth.signOut(); loginError.innerText = "ACCESO DENEGADO."; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
                     }
                 }).catch(error => {
-                    auth.signOut();
-                    loginError.style.color = "#FF5252";
-                    loginError.innerText = "Error de Base de Datos: " + error.message;
-                    btnLogin.innerText = "Acceder al Sistema";
-                    btnLogin.disabled = false;
+                    auth.signOut(); loginError.innerText = "Error Base de Datos: " + error.message; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
                 });
             } else {
-                loginSection.classList.remove('hidden');
-                adminSection.classList.add('hidden');
-                mensaje.innerText = "";
+                loginSection.classList.remove('hidden'); adminSection.classList.add('hidden');
             }
         });
 
-        // SISTEMA DE MENSAJES EN PANTALLA
         function mostrarMensaje(texto, color) {
-            mensaje.style.color = color;
-            mensaje.style.background = "#121519";
-            mensaje.style.border = "1px solid " + color;
-            mensaje.innerText = texto;
-            setTimeout(() => { mensaje.innerText = ""; mensaje.style.background = "transparent"; mensaje.style.border = "none"; }, 5000);
+            mensaje.style.color = color; mensaje.style.border = "1px solid " + color; mensaje.innerText = texto;
+            setTimeout(() => { mensaje.innerText = ""; mensaje.style.border = "none"; }, 5000);
         }
 
-        // GUARDAR ARMAS
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
             const cat = document.getElementById('selCategoria').value;
             const fNombre = document.getElementById('fusilNombre').value.trim();
             const fCodigo = document.getElementById('fusilCodigo').value.trim();
             const fUrl = document.getElementById('fusilUrl').value.trim();
-
-            if(!fNombre || !fCodigo || !fUrl) {
-                mostrarMensaje("⚠️ Completa todos los campos del arma.", "#FF5252");
-                return;
-            }
-
+            if(!fNombre || !fCodigo || !fUrl) { mostrarMensaje("⚠️ Completa campos del arma", "#FF5252"); return; }
             db.ref("MetaArmas/" + cat).update({ fusil_nombre: fNombre, fusil_codigo: fCodigo, fusil_url: fUrl })
-                .then(() => {
-                    mostrarMensaje("✔️ Meta guardada correctamente.", "#00E676");
-                    document.getElementById('fusilNombre').value = "";
-                    document.getElementById('fusilCodigo').value = "";
-                    document.getElementById('fusilUrl').value = "";
-                })
+                .then(() => { mostrarMensaje("✔️ Meta guardada", "#00E676"); document.getElementById('fusilNombre').value = ""; document.getElementById('fusilCodigo').value = ""; document.getElementById('fusilUrl').value = ""; })
                 .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
 
-        // GUARDAR VIDEOS
         document.getElementById('btnGuardarVideos').addEventListener('click', () => {
             const slot = document.getElementById('selVideoSlot').value;
             const jTitulo = document.getElementById('jugadaTitulo').value.trim();
             const jUrl = document.getElementById('jugadaUrl').value.trim();
-
-            if(!jTitulo || !jUrl) {
-                mostrarMensaje("⚠️ Completa los campos del video.", "#FF5252");
-                return;
-            }
-
+            if(!jTitulo || !jUrl) { mostrarMensaje("⚠️ Completa los campos", "#FF5252"); return; }
             db.ref("VideosComunidad/" + slot).set({ titulo: jTitulo, url: jUrl })
-                .then(() => {
-                    mostrarMensaje("✔️ Video publicado correctamente en: " + slot, "#00E676");
-                    document.getElementById('jugadaTitulo').value = "";
-                    document.getElementById('jugadaUrl').value = "";
-                })
+                .then(() => { mostrarMensaje("✔️ Video publicado en: " + slot, "#00E676"); document.getElementById('jugadaTitulo').value = ""; document.getElementById('jugadaUrl').value = ""; })
                 .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
 
-        // GUARDAR ENLACES DE GUÍAS Y NOTICIAS
         document.getElementById('btnGuardarEnlaces').addEventListener('click', () => {
+            const iNoticias = document.getElementById('imgNoticias').value.trim();
             const uNoticias = document.getElementById('urlNoticias').value.trim();
             const uGuias = document.getElementById('urlGuias').value.trim();
 
-            if(!uNoticias && !uGuias) {
-                mostrarMensaje("⚠️ Escribe al menos un enlace para actualizar.", "#FF5252");
-                return;
+            if(!iNoticias && !uNoticias && !uGuias) {
+                mostrarMensaje("⚠️ Escribe al menos un dato para actualizar.", "#FF5252"); return;
             }
 
             const updates = {};
-            if(uNoticias) updates["Configuracion/BannerConfig/noticias"] = uNoticias;
-            if(uGuias) updates["Configuracion/BannerConfig/guias"] = uGuias;
+            if(iNoticias) updates["Configuracion/BannerConfig/noticias"] = iNoticias; // Aquí se guarda la IMAGEN del banner
+            if(uNoticias) updates["Configuracion/link_noticias"] = uNoticias; // Este es el enlace web (Nuevo)
+            if(uGuias) updates["Configuracion/link_guias"] = uGuias; // Este es el enlace web (Nuevo)
 
             db.ref().update(updates)
                 .then(() => {
-                    mostrarMensaje("✔️ Enlaces de la App actualizados con éxito.", "#00E676");
+                    mostrarMensaje("✔️ Datos actualizados con éxito.", "#00E676");
+                    document.getElementById('imgNoticias').value = "";
                     document.getElementById('urlNoticias').value = "";
                     document.getElementById('urlGuias').value = "";
                 })
-                .catch(error => mostrarMensaje("❌ Error de permisos. Revisa la regla 'Configuracion' en Firebase.", "#FF5252"));
+                .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
     </script>
 </body>
