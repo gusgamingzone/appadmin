@@ -18,39 +18,30 @@
         .btn-danger:hover { background: #D50000; }
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 6px; }
-        .link-recuperar { display: block; text-align: center; margin-top: 15px; color: #00E676; cursor: pointer; font-size: 14px; text-decoration: underline; }
-        .link-recuperar:hover { color: #ffffff; }
         hr { border-color: #333; margin: 30px 0; }
     </style>
-
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
-
     <div class="container">
         <h1>ZONA DE COMANDO</h1>
         <h2>Panel Administrativo</h2>
 
-        <!-- SECCIÓN DE LOGIN -->
         <div id="loginSection">
             <p style="text-align: center; color: #888; margin-bottom: 25px;">Ingresa tus credenciales autorizadas.</p>
-            <div class="form-group"><label>Correo Electrónico (Real)</label><input type="email" id="inEmail" placeholder="tu-correo@gmail.com"></div>
+            <div class="form-group"><label>Correo Electrónico</label><input type="email" id="inEmail" placeholder="tu-correo@gmail.com"></div>
             <div class="form-group"><label>Contraseña</label><input type="password" id="inPassword" placeholder="••••••••"></div>
             <button id="btnLogin">Acceder al Sistema</button>
-            <span class="link-recuperar" id="btnRecuperar">¿Olvidaste tu contraseña?</span>
-            <p id="loginError" style="text-align: center; font-size: 14px; margin-top: 15px;"></p>
+            <p id="loginError" style="text-align: center; font-size: 14px; margin-top: 15px; color: #FF5252;"></p>
         </div>
 
-        <!-- SECCIÓN DE FORMULARIOS -->
         <div id="adminSection" class="hidden">
             <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 15px;"></p>
             
-            <!-- 1. META DE ARMAS -->
             <h3>Actualizar Meta de Armas</h3>
             <div class="form-group">
-                <label>Categoría del Juego:</label>
                 <select id="selCategoria">
                     <option value="warzone">Warzone</option>
                     <option value="multijugador">Multijugador</option>
@@ -63,13 +54,10 @@
             <div class="form-group"><input type="text" id="fusilCodigo" placeholder="Código / Accesorios"></div>
             <div class="form-group"><input type="text" id="fusilUrl" placeholder="URL de la imagen del arma"></div>
             <button id="btnGuardarArmas">Guardar Meta</button>
-
             <hr>
 
-            <!-- 2. VIDEOS DE LA COMUNIDAD -->
             <h3>Actualizar Videos de la Comunidad</h3>
             <div class="form-group">
-                <label>Selecciona el espacio a actualizar:</label>
                 <select id="selVideoSlot">
                     <option value="jugada_semana">Video Principal (Jugada de la Semana)</option>
                     <option value="galeria/video1">Video Secundario 1 (Galería)</option>
@@ -79,24 +67,12 @@
             <div class="form-group"><input type="text" id="jugadaTitulo" placeholder="Ej: La mejor baja de la temporada"></div>
             <div class="form-group"><input type="text" id="jugadaUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
             <button id="btnGuardarVideos">Publicar Video</button>
-
             <hr>
 
-            <!-- 3. ENLACES Y CONFIGURACIÓN -->
-            <h3>Actualizar Enlaces y Banners</h3>
-            <div class="form-group">
-                <label>Restaurar Imagen de Noticias:</label>
-                <input type="text" id="imgNoticias" placeholder="Pega aquí la URL de la FOTO para arreglar el banner">
-            </div>
-            <div class="form-group">
-                <label>URL de Destino - Noticias (Link externo):</label>
-                <input type="text" id="urlNoticias" placeholder="https://...">
-            </div>
-            <div class="form-group">
-                <label>URL de Destino - Guías (Link externo):</label>
-                <input type="text" id="urlGuias" placeholder="https://...">
-            </div>
-            <button id="btnGuardarEnlaces">Guardar Enlaces / Imágenes</button>
+            <h3>Actualizar Enlaces (Navegación Interna)</h3>
+            <div class="form-group"><label>URL Web - Noticias de la Semana:</label><input type="text" id="urlNoticias" placeholder="https://..."></div>
+            <div class="form-group"><label>URL Web - Guías y Trucos:</label><input type="text" id="urlGuias" placeholder="https://..."></div>
+            <button id="btnGuardarEnlaces">Guardar Enlaces</button>
             
             <p id="mensaje"></p>
             <button id="btnCerrarSesion" class="btn-danger">Cerrar Sesión</button>
@@ -109,111 +85,51 @@
             authDomain: "zona-de-comando.firebaseapp.com",
             databaseURL: "https://zona-de-comando-default-rtdb.firebaseio.com",
             projectId: "zona-de-comando",
-            storageBucket: "zona-de-comando.firebasestorage.app",
-            messagingSenderId: "395464987840",
-            appId: "1:395464987840:android:e80b1c15a39218eec70925"
+            storageBucket: "zona-de-comando.firebasestorage.app"
         };
-
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-
-        const loginSection = document.getElementById('loginSection');
-        const adminSection = document.getElementById('adminSection');
-        const btnLogin = document.getElementById('btnLogin');
-        const btnRecuperar = document.getElementById('btnRecuperar');
-        const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-        const inEmail = document.getElementById('inEmail');
-        const inPassword = document.getElementById('inPassword');
-        const loginError = document.getElementById('loginError');
-        const txtAdminInfo = document.getElementById('txtAdminInfo');
-        const mensaje = document.getElementById('mensaje');
+        const auth = firebase.auth(); const db = firebase.database();
+        const loginSection = document.getElementById('loginSection'), adminSection = document.getElementById('adminSection');
+        const btnLogin = document.getElementById('btnLogin'), btnCerrarSesion = document.getElementById('btnCerrarSesion');
+        const loginError = document.getElementById('loginError'), txtAdminInfo = document.getElementById('txtAdminInfo'), mensaje = document.getElementById('mensaje');
 
         btnLogin.addEventListener('click', () => {
-            const email = inEmail.value.trim();
-            const password = inPassword.value.trim();
-            if(!email || !password) { loginError.innerText = "Ingresa datos."; return; }
+            const e = document.getElementById('inEmail').value.trim(), p = document.getElementById('inPassword').value.trim();
+            if(!e || !p) { loginError.innerText = "Ingresa datos."; return; }
             btnLogin.innerText = "Verificando..."; btnLogin.disabled = true;
-            auth.signInWithEmailAndPassword(email, password).catch(() => {
-                btnLogin.innerText = "Acceder al Sistema"; btnLogin.disabled = false; loginError.innerText = "Error en credenciales.";
-            });
+            auth.signInWithEmailAndPassword(e, p).catch(() => { btnLogin.innerText = "Acceder"; btnLogin.disabled = false; loginError.innerText = "Error en credenciales."; });
         });
-
-        btnRecuperar.addEventListener('click', () => {
-            const email = inEmail.value.trim();
-            if(!email) { loginError.innerText = "Escribe tu correo arriba."; return; }
-            auth.sendPasswordResetEmail(email).then(() => { loginError.innerText = "Correo enviado."; }).catch(e => { loginError.innerText = e.message; });
-        });
-
         btnCerrarSesion.addEventListener('click', () => auth.signOut());
-
         auth.onAuthStateChanged(user => {
             if (user) {
-                db.ref("Admins/" + user.uid).once("value").then(snapshot => {
-                    if (snapshot.exists() && snapshot.val() === true) {
-                        loginSection.classList.add('hidden');
-                        adminSection.classList.remove('hidden');
-                        txtAdminInfo.innerText = "Operando como: " + user.email;
-                        inEmail.value = ""; inPassword.value = ""; loginError.innerText = ""; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
-                    } else {
-                        auth.signOut(); loginError.innerText = "ACCESO DENEGADO."; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
-                    }
-                }).catch(error => {
-                    auth.signOut(); loginError.innerText = "Error Base de Datos: " + error.message; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
+                db.ref("Admins/" + user.uid).once("value").then(s => {
+                    if (s.exists() && s.val() === true) {
+                        loginSection.classList.add('hidden'); adminSection.classList.remove('hidden'); txtAdminInfo.innerText = "Operando como: " + user.email; document.getElementById('inEmail').value = ""; document.getElementById('inPassword').value = ""; loginError.innerText = ""; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
+                    } else { auth.signOut(); loginError.innerText = "ACCESO DENEGADO."; btnLogin.innerText = "Acceder"; btnLogin.disabled = false; }
                 });
-            } else {
-                loginSection.classList.remove('hidden'); adminSection.classList.add('hidden');
-            }
+            } else { loginSection.classList.remove('hidden'); adminSection.classList.add('hidden'); }
         });
-
-        function mostrarMensaje(texto, color) {
-            mensaje.style.color = color; mensaje.style.border = "1px solid " + color; mensaje.innerText = texto;
-            setTimeout(() => { mensaje.innerText = ""; mensaje.style.border = "none"; }, 5000);
-        }
+        function mostrarMensaje(texto, color) { mensaje.style.color = color; mensaje.style.border = "1px solid " + color; mensaje.innerText = texto; setTimeout(() => { mensaje.innerText = ""; mensaje.style.border = "none"; }, 5000); }
 
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
-            const cat = document.getElementById('selCategoria').value;
-            const fNombre = document.getElementById('fusilNombre').value.trim();
-            const fCodigo = document.getElementById('fusilCodigo').value.trim();
-            const fUrl = document.getElementById('fusilUrl').value.trim();
-            if(!fNombre || !fCodigo || !fUrl) { mostrarMensaje("⚠️ Completa campos del arma", "#FF5252"); return; }
-            db.ref("MetaArmas/" + cat).update({ fusil_nombre: fNombre, fusil_codigo: fCodigo, fusil_url: fUrl })
-                .then(() => { mostrarMensaje("✔️ Meta guardada", "#00E676"); document.getElementById('fusilNombre').value = ""; document.getElementById('fusilCodigo').value = ""; document.getElementById('fusilUrl').value = ""; })
-                .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
+            const cat = document.getElementById('selCategoria').value, fNombre = document.getElementById('fusilNombre').value.trim(), fCodigo = document.getElementById('fusilCodigo').value.trim(), fUrl = document.getElementById('fusilUrl').value.trim();
+            if(!fNombre || !fCodigo || !fUrl) { mostrarMensaje("⚠️ Completa campos", "#FF5252"); return; }
+            db.ref("MetaArmas/" + cat).update({ fusil_nombre: fNombre, fusil_codigo: fCodigo, fusil_url: fUrl }).then(() => mostrarMensaje("✔️ Meta guardada", "#00E676")).catch(e => mostrarMensaje("❌ Error: " + e.message, "#FF5252"));
         });
 
         document.getElementById('btnGuardarVideos').addEventListener('click', () => {
-            const slot = document.getElementById('selVideoSlot').value;
-            const jTitulo = document.getElementById('jugadaTitulo').value.trim();
-            const jUrl = document.getElementById('jugadaUrl').value.trim();
-            if(!jTitulo || !jUrl) { mostrarMensaje("⚠️ Completa los campos", "#FF5252"); return; }
-            db.ref("VideosComunidad/" + slot).set({ titulo: jTitulo, url: jUrl })
-                .then(() => { mostrarMensaje("✔️ Video publicado en: " + slot, "#00E676"); document.getElementById('jugadaTitulo').value = ""; document.getElementById('jugadaUrl').value = ""; })
-                .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
+            const slot = document.getElementById('selVideoSlot').value, jTitulo = document.getElementById('jugadaTitulo').value.trim(), jUrl = document.getElementById('jugadaUrl').value.trim();
+            if(!jTitulo || !jUrl) { mostrarMensaje("⚠️ Completa campos", "#FF5252"); return; }
+            db.ref("VideosComunidad/" + slot).set({ titulo: jTitulo, url: jUrl }).then(() => mostrarMensaje("✔️ Video publicado", "#00E676")).catch(e => mostrarMensaje("❌ Error: " + e.message, "#FF5252"));
         });
 
         document.getElementById('btnGuardarEnlaces').addEventListener('click', () => {
-            const iNoticias = document.getElementById('imgNoticias').value.trim();
-            const uNoticias = document.getElementById('urlNoticias').value.trim();
-            const uGuias = document.getElementById('urlGuias').value.trim();
-
-            if(!iNoticias && !uNoticias && !uGuias) {
-                mostrarMensaje("⚠️ Escribe al menos un dato para actualizar.", "#FF5252"); return;
-            }
-
+            const uNoticias = document.getElementById('urlNoticias').value.trim(), uGuias = document.getElementById('urlGuias').value.trim();
+            if(!uNoticias && !uGuias) { mostrarMensaje("⚠️ Escribe al menos un enlace.", "#FF5252"); return; }
             const updates = {};
-            if(iNoticias) updates["Configuracion/BannerConfig/noticias"] = iNoticias; // Aquí se guarda la IMAGEN del banner
-            if(uNoticias) updates["Configuracion/link_noticias"] = uNoticias; // Este es el enlace web (Nuevo)
-            if(uGuias) updates["Configuracion/link_guias"] = uGuias; // Este es el enlace web (Nuevo)
-
-            db.ref().update(updates)
-                .then(() => {
-                    mostrarMensaje("✔️ Datos actualizados con éxito.", "#00E676");
-                    document.getElementById('imgNoticias').value = "";
-                    document.getElementById('urlNoticias').value = "";
-                    document.getElementById('urlGuias').value = "";
-                })
-                .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
+            if(uNoticias) updates["Configuracion/link_noticias"] = uNoticias;
+            if(uGuias) updates["Configuracion/link_guias"] = uGuias;
+            db.ref().update(updates).then(() => { mostrarMensaje("✔️ Enlaces de la App actualizados.", "#00E676"); document.getElementById('urlNoticias').value = ""; document.getElementById('urlGuias').value = ""; }).catch(e => mostrarMensaje("❌ Error de permisos.", "#FF5252"));
         });
     </script>
 </body>
