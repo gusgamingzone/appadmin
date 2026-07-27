@@ -19,6 +19,8 @@
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 6px; }
         hr { border-color: #333; margin: 30px 0; }
+        .link-olvido { display: block; text-align: center; color: #888; margin-top: 15px; font-size: 13px; text-decoration: none; transition: 0.3s; }
+        .link-olvido:hover { color: #00E676; }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -34,6 +36,7 @@
             <div class="form-group"><label>Correo Electrónico</label><input type="email" id="inEmail" placeholder="tu-correo@gmail.com"></div>
             <div class="form-group"><label>Contraseña</label><input type="password" id="inPassword" placeholder="••••••••"></div>
             <button id="btnLogin">Acceder al Sistema</button>
+            <a href="#" id="btnOlvido" class="link-olvido">¿Olvidaste tu contraseña?</a>
             <p id="loginError" style="text-align: center; font-size: 14px; margin-top: 15px; color: #FF5252;"></p>
         </div>
 
@@ -115,21 +118,45 @@
         const loginSection = document.getElementById('loginSection'), adminSection = document.getElementById('adminSection');
         const btnLogin = document.getElementById('btnLogin'), btnCerrarSesion = document.getElementById('btnCerrarSesion');
         const loginError = document.getElementById('loginError'), txtAdminInfo = document.getElementById('txtAdminInfo'), mensaje = document.getElementById('mensaje');
+        const btnOlvido = document.getElementById('btnOlvido');
 
+        // INICIO DE SESIÓN
         btnLogin.addEventListener('click', () => {
             const e = document.getElementById('inEmail').value.trim(), p = document.getElementById('inPassword').value.trim();
-            if(!e || !p) { loginError.innerText = "Ingresa datos."; return; }
+            if(!e || !p) { loginError.style.color = "#FF5252"; loginError.innerText = "Ingresa datos."; return; }
             btnLogin.innerText = "Verificando..."; btnLogin.disabled = true;
-            auth.signInWithEmailAndPassword(e, p).catch(() => { btnLogin.innerText = "Acceder"; btnLogin.disabled = false; loginError.innerText = "Error en credenciales."; });
+            auth.signInWithEmailAndPassword(e, p).catch(() => { btnLogin.innerText = "Acceder al Sistema"; btnLogin.disabled = false; loginError.style.color = "#FF5252"; loginError.innerText = "Error en credenciales."; });
         });
+
+        // RECUPERAR CONTRASEÑA
+        btnOlvido.addEventListener('click', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('inEmail').value.trim();
+            if(!email) {
+                loginError.style.color = "#FF5252";
+                loginError.innerText = "Escribe tu correo arriba y presiona aquí de nuevo.";
+                return;
+            }
+            auth.sendPasswordResetEmail(email).then(() => {
+                loginError.style.color = "#00E676";
+                loginError.innerText = "¡Enlace enviado! Revisa tu bandeja de entrada.";
+                setTimeout(() => { loginError.innerText = ""; loginError.style.color = "#FF5252"; }, 6000);
+            }).catch(err => {
+                loginError.style.color = "#FF5252";
+                loginError.innerText = "Error: Verifica que el correo esté bien escrito.";
+            });
+        });
+
+        // CERRAR SESIÓN
         btnCerrarSesion.addEventListener('click', () => auth.signOut());
         
+        // ESTADO DE AUTENTICACIÓN
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref("Admins/" + user.uid).once("value").then(s => {
                     if (s.exists() && s.val() === true) {
-                        loginSection.classList.add('hidden'); adminSection.classList.remove('hidden'); txtAdminInfo.innerText = "Operando como: " + user.email; document.getElementById('inEmail').value = ""; document.getElementById('inPassword').value = ""; loginError.innerText = ""; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
-                    } else { auth.signOut(); loginError.innerText = "ACCESO DENEGADO."; btnLogin.innerText = "Acceder"; btnLogin.disabled = false; }
+                        loginSection.classList.add('hidden'); adminSection.classList.remove('hidden'); txtAdminInfo.innerText = "Operando como: " + user.email; document.getElementById('inEmail').value = ""; document.getElementById('inPassword').value = ""; loginError.innerText = ""; btnLogin.innerText = "Acceder al Sistema"; btnLogin.disabled = false;
+                    } else { auth.signOut(); loginError.style.color = "#FF5252"; loginError.innerText = "ACCESO DENEGADO."; btnLogin.innerText = "Acceder al Sistema"; btnLogin.disabled = false; }
                 });
             } else { 
                 loginSection.classList.remove('hidden'); 
@@ -144,57 +171,31 @@
             const texto = document.getElementById('notifMensaje').value.trim();
             if(!texto) { mostrarMensaje("⚠️ Escribe un mensaje para la notificación.", "#FF5252"); return; }
 
-            const notifData = {
-                mensaje: texto,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-
+            const notifData = { mensaje: texto, timestamp: firebase.database.ServerValue.TIMESTAMP };
             db.ref("Configuracion/NotificacionGlobal").set(notifData)
-                .then(() => {
-                    mostrarMensaje("✔️ ¡Notificación enviada a toda la app!", "#00E676");
-                    document.getElementById('notifMensaje').value = "";
-                })
+                .then(() => { mostrarMensaje("✔️ ¡Notificación enviada a toda la app!", "#00E676"); document.getElementById('notifMensaje').value = ""; })
                 .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
 
-        // GUARDAR METAS DE ARMAS (LÓGICA ACTUALIZADA)
+        // GUARDAR METAS DE ARMAS
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
             const cat = document.getElementById('selCategoria').value;
             const updates = {};
             
-            // Recoger Fusil
-            const fN = document.getElementById('fusilNombre').value.trim();
-            const fC = document.getElementById('fusilCodigo').value.trim();
-            const fU = document.getElementById('fusilUrl').value.trim();
-            if(fN) updates.fusil_nombre = fN;
-            if(fC) updates.fusil_codigo = fC;
-            if(fU) updates.fusil_url = fU;
+            const fN = document.getElementById('fusilNombre').value.trim(), fC = document.getElementById('fusilCodigo').value.trim(), fU = document.getElementById('fusilUrl').value.trim();
+            if(fN) updates.fusil_nombre = fN; if(fC) updates.fusil_codigo = fC; if(fU) updates.fusil_url = fU;
 
-            // Recoger Subfusil
-            const sN = document.getElementById('subfusilNombre').value.trim();
-            const sC = document.getElementById('subfusilCodigo').value.trim();
-            const sU = document.getElementById('subfusilUrl').value.trim();
-            if(sN) updates.subfusil_nombre = sN;
-            if(sC) updates.subfusil_codigo = sC;
-            if(sU) updates.subfusil_url = sU;
+            const sN = document.getElementById('subfusilNombre').value.trim(), sC = document.getElementById('subfusilCodigo').value.trim(), sU = document.getElementById('subfusilUrl').value.trim();
+            if(sN) updates.subfusil_nombre = sN; if(sC) updates.subfusil_codigo = sC; if(sU) updates.subfusil_url = sU;
 
-            // Recoger Francotirador
-            const snN = document.getElementById('sniperNombre').value.trim();
-            const snC = document.getElementById('sniperCodigo').value.trim();
-            const snU = document.getElementById('sniperUrl').value.trim();
-            if(snN) updates.francotirador_nombre = snN;
-            if(snC) updates.francotirador_codigo = snC;
-            if(snU) updates.francotirador_url = snU;
+            const snN = document.getElementById('sniperNombre').value.trim(), snC = document.getElementById('sniperCodigo').value.trim(), snU = document.getElementById('sniperUrl').value.trim();
+            if(snN) updates.francotirador_nombre = snN; if(snC) updates.francotirador_codigo = snC; if(snU) updates.francotirador_url = snU;
 
-            if(Object.keys(updates).length === 0) { 
-                mostrarMensaje("⚠️ Llena al menos un dato para actualizar", "#FF5252"); 
-                return; 
-            }
+            if(Object.keys(updates).length === 0) { mostrarMensaje("⚠️ Llena al menos un dato para actualizar", "#FF5252"); return; }
 
             db.ref("MetaArmas/" + cat).update(updates)
                 .then(() => {
                     mostrarMensaje("✔️ Armas actualizadas correctamente", "#00E676");
-                    // Limpiar los cuadros de texto
                     document.getElementById('fusilNombre').value = ""; document.getElementById('fusilCodigo').value = ""; document.getElementById('fusilUrl').value = "";
                     document.getElementById('subfusilNombre').value = ""; document.getElementById('subfusilCodigo').value = ""; document.getElementById('subfusilUrl').value = "";
                     document.getElementById('sniperNombre').value = ""; document.getElementById('sniperCodigo').value = ""; document.getElementById('sniperUrl').value = "";
@@ -202,12 +203,14 @@
                 .catch(e => mostrarMensaje("❌ Error: " + e.message, "#FF5252"));
         });
 
+        // GUARDAR VIDEOS
         document.getElementById('btnGuardarVideos').addEventListener('click', () => {
             const slot = document.getElementById('selVideoSlot').value, jTitulo = document.getElementById('jugadaTitulo').value.trim(), jUrl = document.getElementById('jugadaUrl').value.trim();
             if(!jTitulo || !jUrl) { mostrarMensaje("⚠️ Completa campos", "#FF5252"); return; }
             db.ref("VideosComunidad/" + slot).set({ titulo: jTitulo, url: jUrl }).then(() => mostrarMensaje("✔️ Video publicado", "#00E676")).catch(e => mostrarMensaje("❌ Error: " + e.message, "#FF5252"));
         });
 
+        // GUARDAR ENLACES
         document.getElementById('btnGuardarEnlaces').addEventListener('click', () => {
             const uNoticias = document.getElementById('urlNoticias').value.trim(), uGuias = document.getElementById('urlGuias').value.trim();
             if(!uNoticias && !uGuias) { mostrarMensaje("⚠️ Escribe al menos un enlace.", "#FF5252"); return; }
