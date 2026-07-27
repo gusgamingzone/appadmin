@@ -18,10 +18,9 @@
         .btn-danger:hover { background: #D50000; }
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 6px; }
-        
-        /* Estilo para el botón de recuperar contraseña */
         .link-recuperar { display: block; text-align: center; margin-top: 15px; color: #00E676; cursor: pointer; font-size: 14px; text-decoration: underline; }
         .link-recuperar:hover { color: #ffffff; }
+        hr { border-color: #333; margin: 30px 0; }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -57,6 +56,7 @@
         <div id="adminSection" class="hidden">
             <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 15px;"></p>
             
+            <!-- 1. META DE ARMAS -->
             <h3>Actualizar Meta de Armas</h3>
             <div class="form-group">
                 <label>Categoría del Juego:</label>
@@ -68,16 +68,23 @@
                     <option value="ranked_multi">Ranked Multi</option>
                 </select>
             </div>
-            
             <div class="form-group"><input type="text" id="fusilNombre" placeholder="Nombre del Arma (Ej: MCW)"></div>
             <div class="form-group"><input type="text" id="fusilCodigo" placeholder="Código / Accesorios"></div>
             <div class="form-group"><input type="text" id="fusilUrl" placeholder="URL de la imagen del arma"></div>
-
             <button id="btnGuardarArmas">Guardar Meta</button>
 
-            <hr style="border-color: #333; margin: 30px 0;">
+            <hr>
 
-            <h3>Actualizar Video Destacado</h3>
+            <!-- 2. VIDEOS DE LA COMUNIDAD (3 ESPACIOS) -->
+            <h3>Actualizar Videos de la Comunidad</h3>
+            <div class="form-group">
+                <label>Selecciona el espacio a actualizar:</label>
+                <select id="selVideoSlot">
+                    <option value="jugada_semana">Video Principal (Jugada de la Semana)</option>
+                    <option value="galeria/video1">Video Secundario 1 (Galería)</option>
+                    <option value="galeria/video2">Video Secundario 2 (Galería)</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label>Título del Video:</label>
                 <input type="text" id="jugadaTitulo" placeholder="Ej: La mejor baja de la temporada">
@@ -86,11 +93,23 @@
                 <label>Enlace de YouTube:</label>
                 <input type="text" id="jugadaUrl" placeholder="https://www.youtube.com/watch?v=...">
             </div>
-
             <button id="btnGuardarVideos">Publicar Video</button>
+
+            <hr>
+
+            <!-- 3. ENLACES Y CONFIGURACIÓN -->
+            <h3>Actualizar Enlaces de la App</h3>
+            <div class="form-group">
+                <label>Enlace de Noticias de la Semana:</label>
+                <input type="text" id="urlNoticias" placeholder="URL web o de imagen para Noticias">
+            </div>
+            <div class="form-group">
+                <label>Enlace de Guías:</label>
+                <input type="text" id="urlGuias" placeholder="URL web o de imagen para Guías">
+            </div>
+            <button id="btnGuardarEnlaces">Guardar Enlaces</button>
             
             <p id="mensaje"></p>
-
             <button id="btnCerrarSesion" class="btn-danger">Cerrar Sesión</button>
         </div>
     </div>
@@ -147,17 +166,15 @@
         // RECUPERAR CONTRASEÑA
         btnRecuperar.addEventListener('click', () => {
             const email = inEmail.value.trim();
-            
             if(!email) {
                 loginError.style.color = "#FF5252";
                 loginError.innerText = "Escribe tu correo arriba y haz clic aquí de nuevo.";
                 return;
             }
-
             auth.sendPasswordResetEmail(email)
                 .then(() => {
                     loginError.style.color = "#00E676";
-                    loginError.innerText = "✔️ Correo de recuperación enviado. Revisa tu bandeja de entrada (y spam).";
+                    loginError.innerText = "✔️ Correo de recuperación enviado. Revisa tu bandeja de entrada.";
                 })
                 .catch((error) => {
                     loginError.style.color = "#FF5252";
@@ -170,7 +187,7 @@
             auth.signOut();
         });
 
-        // DETECTAR ESTADO DE SESIÓN (AQUÍ ESTÁ EL AJUSTE)
+        // DETECTAR ESTADO DE SESIÓN
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
@@ -186,15 +203,14 @@
                     } else {
                         auth.signOut();
                         loginError.style.color = "#FF5252";
-                        loginError.innerText = "ACCESO DENEGADO: Tu usuario no tiene permisos de administrador.";
+                        loginError.innerText = "ACCESO DENEGADO: No eres administrador.";
                         btnLogin.innerText = "Acceder al Sistema";
                         btnLogin.disabled = false;
                     }
                 }).catch(error => {
-                    // Si Firebase rechaza la lectura por falta de permisos en las Reglas, lo atrapa aquí
                     auth.signOut();
                     loginError.style.color = "#FF5252";
-                    loginError.innerText = "Error de Base de Datos: Actualiza las Reglas en Firebase (" + error.message + ")";
+                    loginError.innerText = "Error de Base de Datos: " + error.message;
                     btnLogin.innerText = "Acceder al Sistema";
                     btnLogin.disabled = false;
                 });
@@ -205,7 +221,7 @@
             }
         });
 
-        // FUNCIONES DE GUARDADO
+        // SISTEMA DE MENSAJES EN PANTALLA
         function mostrarMensaje(texto, color) {
             mensaje.style.color = color;
             mensaje.style.background = "#121519";
@@ -214,6 +230,7 @@
             setTimeout(() => { mensaje.innerText = ""; mensaje.style.background = "transparent"; mensaje.style.border = "none"; }, 5000);
         }
 
+        // GUARDAR ARMAS
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
             const cat = document.getElementById('selCategoria').value;
             const fNombre = document.getElementById('fusilNombre').value.trim();
@@ -226,11 +243,18 @@
             }
 
             db.ref("MetaArmas/" + cat).update({ fusil_nombre: fNombre, fusil_codigo: fCodigo, fusil_url: fUrl })
-                .then(() => mostrarMensaje("✔️ Meta guardada correctamente.", "#00E676"))
+                .then(() => {
+                    mostrarMensaje("✔️ Meta guardada correctamente.", "#00E676");
+                    document.getElementById('fusilNombre').value = "";
+                    document.getElementById('fusilCodigo').value = "";
+                    document.getElementById('fusilUrl').value = "";
+                })
                 .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
 
+        // GUARDAR VIDEOS
         document.getElementById('btnGuardarVideos').addEventListener('click', () => {
+            const slot = document.getElementById('selVideoSlot').value;
             const jTitulo = document.getElementById('jugadaTitulo').value.trim();
             const jUrl = document.getElementById('jugadaUrl').value.trim();
 
@@ -239,9 +263,36 @@
                 return;
             }
 
-            db.ref("VideosComunidad/jugada_semana").set({ titulo: jTitulo, url: jUrl })
-                .then(() => mostrarMensaje("✔️ Video publicado correctamente.", "#00E676"))
+            db.ref("VideosComunidad/" + slot).set({ titulo: jTitulo, url: jUrl })
+                .then(() => {
+                    mostrarMensaje("✔️ Video publicado correctamente en: " + slot, "#00E676");
+                    document.getElementById('jugadaTitulo').value = "";
+                    document.getElementById('jugadaUrl').value = "";
+                })
                 .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
+        });
+
+        // GUARDAR ENLACES DE GUÍAS Y NOTICIAS
+        document.getElementById('btnGuardarEnlaces').addEventListener('click', () => {
+            const uNoticias = document.getElementById('urlNoticias').value.trim();
+            const uGuias = document.getElementById('urlGuias').value.trim();
+
+            if(!uNoticias && !uGuias) {
+                mostrarMensaje("⚠️ Escribe al menos un enlace para actualizar.", "#FF5252");
+                return;
+            }
+
+            const updates = {};
+            if(uNoticias) updates["Configuracion/BannerConfig/noticias"] = uNoticias;
+            if(uGuias) updates["Configuracion/BannerConfig/guias"] = uGuias;
+
+            db.ref().update(updates)
+                .then(() => {
+                    mostrarMensaje("✔️ Enlaces de la App actualizados con éxito.", "#00E676");
+                    document.getElementById('urlNoticias').value = "";
+                    document.getElementById('urlGuias').value = "";
+                })
+                .catch(error => mostrarMensaje("❌ Error de permisos. Revisa la regla 'Configuracion' en Firebase.", "#FF5252"));
         });
     </script>
 </body>
