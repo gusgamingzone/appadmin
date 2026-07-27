@@ -18,9 +18,12 @@
         .btn-danger:hover { background: #D50000; }
         .hidden { display: none; }
         #mensaje { text-align: center; margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 6px; }
+        
+        /* Estilo para el botón de recuperar contraseña */
+        .link-recuperar { display: block; text-align: center; margin-top: 15px; color: #00E676; cursor: pointer; font-size: 14px; text-decoration: underline; }
+        .link-recuperar:hover { color: #ffffff; }
     </style>
 
-    <!-- Importar Firebase SDK desde CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -31,13 +34,13 @@
         <h1>ZONA DE COMANDO</h1>
         <h2>Panel Administrativo</h2>
 
-        <!-- SECCIÓN DE LOGIN MANUAL -->
+        <!-- SECCIÓN DE LOGIN -->
         <div id="loginSection">
             <p style="text-align: center; color: #888; margin-bottom: 25px;">Ingresa tus credenciales autorizadas.</p>
             
             <div class="form-group">
-                <label>Correo de Administrador</label>
-                <input type="email" id="inEmail" placeholder="ejemplo@zonadecomando.com">
+                <label>Correo Electrónico (Real)</label>
+                <input type="email" id="inEmail" placeholder="tu-correo@gmail.com">
             </div>
             <div class="form-group">
                 <label>Contraseña</label>
@@ -45,7 +48,9 @@
             </div>
 
             <button id="btnLogin">Acceder al Sistema</button>
-            <p id="loginError" style="color: #FF5252; text-align: center; font-size: 14px; margin-top: 10px;"></p>
+            <span class="link-recuperar" id="btnRecuperar">¿Olvidaste tu contraseña?</span>
+            
+            <p id="loginError" style="text-align: center; font-size: 14px; margin-top: 15px;"></p>
         </div>
 
         <!-- SECCIÓN DE FORMULARIOS -->
@@ -91,7 +96,6 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCw2X2X8jk-zYIg23RNODKbk0mPHsvROmQ",
             authDomain: "zona-de-comando.firebaseapp.com",
@@ -106,10 +110,10 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // ELEMENTOS DEL DOM
         const loginSection = document.getElementById('loginSection');
         const adminSection = document.getElementById('adminSection');
         const btnLogin = document.getElementById('btnLogin');
+        const btnRecuperar = document.getElementById('btnRecuperar');
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
         const inEmail = document.getElementById('inEmail');
         const inPassword = document.getElementById('inPassword');
@@ -117,13 +121,13 @@
         const txtAdminInfo = document.getElementById('txtAdminInfo');
         const mensaje = document.getElementById('mensaje');
 
-        // INICIAR SESIÓN MANUALMENTE
+        // INICIAR SESIÓN
         btnLogin.addEventListener('click', () => {
             const email = inEmail.value.trim();
             const password = inPassword.value.trim();
-            loginError.innerText = "";
-
+            
             if(!email || !password) {
+                loginError.style.color = "#FF5252";
                 loginError.innerText = "Por favor ingresa correo y contraseña.";
                 return;
             }
@@ -135,6 +139,28 @@
                 .catch((error) => {
                     btnLogin.innerText = "Acceder al Sistema";
                     btnLogin.disabled = false;
+                    loginError.style.color = "#FF5252";
+                    loginError.innerText = "Error: Verifica tus datos o tu conexión.";
+                });
+        });
+
+        // RECUPERAR CONTRASEÑA
+        btnRecuperar.addEventListener('click', () => {
+            const email = inEmail.value.trim();
+            
+            if(!email) {
+                loginError.style.color = "#FF5252";
+                loginError.innerText = "Escribe tu correo arriba y haz clic aquí de nuevo.";
+                return;
+            }
+
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    loginError.style.color = "#00E676";
+                    loginError.innerText = "✔️ Correo de recuperación enviado. Revisa tu bandeja de entrada (y spam).";
+                })
+                .catch((error) => {
+                    loginError.style.color = "#FF5252";
                     loginError.innerText = "Error: " + error.message;
                 });
         });
@@ -147,7 +173,6 @@
         // DETECTAR ESTADO DE SESIÓN
         auth.onAuthStateChanged(user => {
             if (user) {
-                // Verificar en Base de Datos si realmente es Admin
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
                     if (snapshot.exists() && snapshot.val() === true) {
                         loginSection.classList.add('hidden');
@@ -157,10 +182,11 @@
                         inPassword.value = "";
                         btnLogin.innerText = "Acceder al Sistema";
                         btnLogin.disabled = false;
+                        loginError.innerText = "";
                     } else {
-                        // Si se loguea pero no está en la lista de Admins
                         auth.signOut();
-                        loginError.innerText = "ACCESO DENEGADO: Tu usuario no tiene permisos de administrador. Revisa tu UID en la base de datos.";
+                        loginError.style.color = "#FF5252";
+                        loginError.innerText = "ACCESO DENEGADO: Tu usuario no tiene permisos de administrador.";
                     }
                 });
             } else {
