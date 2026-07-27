@@ -170,7 +170,7 @@
             auth.signOut();
         });
 
-        // DETECTAR ESTADO DE SESIÓN
+        // DETECTAR ESTADO DE SESIÓN (AQUÍ ESTÁ EL AJUSTE)
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref("Admins/" + user.uid).once("value").then(snapshot => {
@@ -187,7 +187,16 @@
                         auth.signOut();
                         loginError.style.color = "#FF5252";
                         loginError.innerText = "ACCESO DENEGADO: Tu usuario no tiene permisos de administrador.";
+                        btnLogin.innerText = "Acceder al Sistema";
+                        btnLogin.disabled = false;
                     }
+                }).catch(error => {
+                    // Si Firebase rechaza la lectura por falta de permisos en las Reglas, lo atrapa aquí
+                    auth.signOut();
+                    loginError.style.color = "#FF5252";
+                    loginError.innerText = "Error de Base de Datos: Actualiza las Reglas en Firebase (" + error.message + ")";
+                    btnLogin.innerText = "Acceder al Sistema";
+                    btnLogin.disabled = false;
                 });
             } else {
                 loginSection.classList.remove('hidden');
