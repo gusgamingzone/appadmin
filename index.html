@@ -60,10 +60,23 @@
                     <option value="ranked_multi">Ranked Multi</option>
                 </select>
             </div>
-            <div class="form-group"><input type="text" id="fusilNombre" placeholder="Nombre del Arma (Ej: MCW)"></div>
+            
+            <h4 style="color: #aaa; margin-bottom: 5px; text-align: center;">FUSIL DE ASALTO</h4>
+            <div class="form-group"><input type="text" id="fusilNombre" placeholder="Nombre (Ej: MCW)"></div>
             <div class="form-group"><input type="text" id="fusilCodigo" placeholder="Código / Accesorios"></div>
-            <div class="form-group"><input type="text" id="fusilUrl" placeholder="URL de la imagen del arma"></div>
-            <button id="btnGuardarArmas">Guardar Meta</button>
+            <div class="form-group"><input type="text" id="fusilUrl" placeholder="URL de la imagen del fusil"></div>
+
+            <h4 style="color: #aaa; margin-bottom: 5px; margin-top: 25px; text-align: center;">SUBFUSIL</h4>
+            <div class="form-group"><input type="text" id="subfusilNombre" placeholder="Nombre (Ej: Striker)"></div>
+            <div class="form-group"><input type="text" id="subfusilCodigo" placeholder="Código / Accesorios"></div>
+            <div class="form-group"><input type="text" id="subfusilUrl" placeholder="URL de la imagen del subfusil"></div>
+
+            <h4 style="color: #aaa; margin-bottom: 5px; margin-top: 25px; text-align: center;">FRANCOTIRADOR</h4>
+            <div class="form-group"><input type="text" id="sniperNombre" placeholder="Nombre (Ej: KATT-AMR)"></div>
+            <div class="form-group"><input type="text" id="sniperCodigo" placeholder="Código / Accesorios"></div>
+            <div class="form-group"><input type="text" id="sniperUrl" placeholder="URL de la imagen del francotirador"></div>
+            
+            <button id="btnGuardarArmas">Guardar Meta Seleccionada</button>
             <hr>
 
             <h3>Actualizar Videos de la Comunidad</h3>
@@ -144,10 +157,49 @@
                 .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
         });
 
+        // GUARDAR METAS DE ARMAS (LÓGICA ACTUALIZADA)
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
-            const cat = document.getElementById('selCategoria').value, fNombre = document.getElementById('fusilNombre').value.trim(), fCodigo = document.getElementById('fusilCodigo').value.trim(), fUrl = document.getElementById('fusilUrl').value.trim();
-            if(!fNombre || !fCodigo || !fUrl) { mostrarMensaje("⚠️ Completa campos", "#FF5252"); return; }
-            db.ref("MetaArmas/" + cat).update({ fusil_nombre: fNombre, fusil_codigo: fCodigo, fusil_url: fUrl }).then(() => mostrarMensaje("✔️ Meta guardada", "#00E676")).catch(e => mostrarMensaje("❌ Error: " + e.message, "#FF5252"));
+            const cat = document.getElementById('selCategoria').value;
+            const updates = {};
+            
+            // Recoger Fusil
+            const fN = document.getElementById('fusilNombre').value.trim();
+            const fC = document.getElementById('fusilCodigo').value.trim();
+            const fU = document.getElementById('fusilUrl').value.trim();
+            if(fN) updates.fusil_nombre = fN;
+            if(fC) updates.fusil_codigo = fC;
+            if(fU) updates.fusil_url = fU;
+
+            // Recoger Subfusil
+            const sN = document.getElementById('subfusilNombre').value.trim();
+            const sC = document.getElementById('subfusilCodigo').value.trim();
+            const sU = document.getElementById('subfusilUrl').value.trim();
+            if(sN) updates.subfusil_nombre = sN;
+            if(sC) updates.subfusil_codigo = sC;
+            if(sU) updates.subfusil_url = sU;
+
+            // Recoger Francotirador
+            const snN = document.getElementById('sniperNombre').value.trim();
+            const snC = document.getElementById('sniperCodigo').value.trim();
+            const snU = document.getElementById('sniperUrl').value.trim();
+            if(snN) updates.francotirador_nombre = snN;
+            if(snC) updates.francotirador_codigo = snC;
+            if(snU) updates.francotirador_url = snU;
+
+            if(Object.keys(updates).length === 0) { 
+                mostrarMensaje("⚠️ Llena al menos un dato para actualizar", "#FF5252"); 
+                return; 
+            }
+
+            db.ref("MetaArmas/" + cat).update(updates)
+                .then(() => {
+                    mostrarMensaje("✔️ Armas actualizadas correctamente", "#00E676");
+                    // Limpiar los cuadros de texto
+                    document.getElementById('fusilNombre').value = ""; document.getElementById('fusilCodigo').value = ""; document.getElementById('fusilUrl').value = "";
+                    document.getElementById('subfusilNombre').value = ""; document.getElementById('subfusilCodigo').value = ""; document.getElementById('subfusilUrl').value = "";
+                    document.getElementById('sniperNombre').value = ""; document.getElementById('sniperCodigo').value = ""; document.getElementById('sniperUrl').value = "";
+                })
+                .catch(e => mostrarMensaje("❌ Error: " + e.message, "#FF5252"));
         });
 
         document.getElementById('btnGuardarVideos').addEventListener('click', () => {
