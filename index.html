@@ -110,6 +110,7 @@
             auth.signInWithEmailAndPassword(e, p).catch(() => { btnLogin.innerText = "Acceder"; btnLogin.disabled = false; loginError.innerText = "Error en credenciales."; });
         });
         btnCerrarSesion.addEventListener('click', () => auth.signOut());
+        
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref("Admins/" + user.uid).once("value").then(s => {
@@ -117,8 +118,12 @@
                         loginSection.classList.add('hidden'); adminSection.classList.remove('hidden'); txtAdminInfo.innerText = "Operando como: " + user.email; document.getElementById('inEmail').value = ""; document.getElementById('inPassword').value = ""; loginError.innerText = ""; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
                     } else { auth.signOut(); loginError.innerText = "ACCESO DENEGADO."; btnLogin.innerText = "Acceder"; btnLogin.disabled = false; }
                 });
-            } else { loginSection.classList.add('hidden'); adminSection.classList.remove('hidden'); }
+            } else { 
+                loginSection.classList.remove('hidden'); 
+                adminSection.classList.add('hidden'); 
+            }
         });
+
         function mostrarMensaje(texto, color) { mensaje.style.color = color; mensaje.style.border = "1px solid " + color; mensaje.innerText = texto; setTimeout(() => { mensaje.innerText = ""; mensaje.style.border = "none"; }, 5000); }
 
         // ENVIAR NOTIFICACIÓN GLOBAL
