@@ -40,6 +40,16 @@
         <div id="adminSection" class="hidden">
             <p id="txtAdminInfo" style="text-align: center; color: #00E676; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 15px;"></p>
             
+            <!-- ENVIAR NOTIFICACIÓN PUSH GLOBAL -->
+            <h3>📢 Enviar Notificación al Clan</h3>
+            <div class="form-group">
+                <label>Mensaje de la Notificación:</label>
+                <input type="text" id="notifMensaje" placeholder="Ej: ¡Hay nuevas metas para multijugador!">
+            </div>
+            <button id="btnEnviarNotif">Enviar Notificación a la App</button>
+
+            <hr>
+
             <h3>Actualizar Meta de Armas</h3>
             <div class="form-group">
                 <select id="selCategoria">
@@ -107,9 +117,27 @@
                         loginSection.classList.add('hidden'); adminSection.classList.remove('hidden'); txtAdminInfo.innerText = "Operando como: " + user.email; document.getElementById('inEmail').value = ""; document.getElementById('inPassword').value = ""; loginError.innerText = ""; btnLogin.innerText = "Acceder"; btnLogin.disabled = false;
                     } else { auth.signOut(); loginError.innerText = "ACCESO DENEGADO."; btnLogin.innerText = "Acceder"; btnLogin.disabled = false; }
                 });
-            } else { loginSection.classList.remove('hidden'); adminSection.classList.add('hidden'); }
+            } else { loginSection.classList.add('hidden'); adminSection.classList.remove('hidden'); }
         });
         function mostrarMensaje(texto, color) { mensaje.style.color = color; mensaje.style.border = "1px solid " + color; mensaje.innerText = texto; setTimeout(() => { mensaje.innerText = ""; mensaje.style.border = "none"; }, 5000); }
+
+        // ENVIAR NOTIFICACIÓN GLOBAL
+        document.getElementById('btnEnviarNotif').addEventListener('click', () => {
+            const texto = document.getElementById('notifMensaje').value.trim();
+            if(!texto) { mostrarMensaje("⚠️ Escribe un mensaje para la notificación.", "#FF5252"); return; }
+
+            const notifData = {
+                mensaje: texto,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            db.ref("Configuracion/NotificacionGlobal").set(notifData)
+                .then(() => {
+                    mostrarMensaje("✔️ ¡Notificación enviada a toda la app!", "#00E676");
+                    document.getElementById('notifMensaje').value = "";
+                })
+                .catch(error => mostrarMensaje("❌ Error: " + error.message, "#FF5252"));
+        });
 
         document.getElementById('btnGuardarArmas').addEventListener('click', () => {
             const cat = document.getElementById('selCategoria').value, fNombre = document.getElementById('fusilNombre').value.trim(), fCodigo = document.getElementById('fusilCodigo').value.trim(), fUrl = document.getElementById('fusilUrl').value.trim();
